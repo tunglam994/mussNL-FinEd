@@ -41,7 +41,7 @@ ccnet_dir = Path(
         'Please download the CCNet corpus from https://github.com/facebookresearch/cc_net and enter the path to the downloaded data: '
     )
 )
-language = input('What language do you want to process? (en/fr/es): ')
+language = input('What language do you want to process? (en/fr/es/nl): ')
 cluster = 'local'
 dataset_dir = get_dataset_dir('uts') / language
 # For large jobs only
@@ -54,20 +54,25 @@ with log_action('Splitting CCNet shards into smaller subshards'):
     n_shards = {  # Number of shards to take for each languages for ~1B sentences
         'en': 15,
         'fr': 25,
-        'es': 13,  # We would need about 20 shards for 1B sentences, but there are only 13
+        'es': 13,
+        'nl': 1,  # We would need about 20 shards for 1B sentences, but there are only 13
     }[language]
-    ccnet_filepaths = [ccnet_dir / f'{language}_head_{i:04d}.json.gz' for i in range(n_shards)]
+    ccnet_filepaths = [
+        ccnet_dir / f'{language}_head_{i:04d}.json.gz' for i in range(n_shards)]
     raw_original_dir = dataset_dir / 'raw_original'
     raw_original_dir.mkdir(exist_ok=True, parents=True)
-    output_dirs = [raw_original_dir / f'{language}_head_{i:04d}' for i in range(n_shards)]
-    n_docs_per_file = 50000
-    executor = get_executor(cluster=cluster, slurm_partition='dev', timeout_min=1 * 30, slurm_array_parallelism=16)
+    output_dirs = [raw_original_dir /
+                   f'{language}_head_{i:04d}' for i in range(n_shards)]
+    n_docs_per_file = 10000
+    executor = get_executor(cluster=cluster, slurm_partition='dev',
+                            timeout_min=1 * 30, slurm_array_parallelism=16)
     jobs = []
     with executor.batch():
         for ccnet_filepath, output_dir in zip(ccnet_filepaths, output_dirs):
             if output_dir.exists():
                 continue
-            job = executor.submit(split_ccnet_shard, ccnet_filepath, output_dir, n_docs_per_file)
+            job = executor.submit(
+                split_ccnet_shard, ccnet_filepath, output_dir, n_docs_per_file)
             jobs.append(job)
     print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]  # Wait for the jobs to finish
@@ -89,15 +94,19 @@ with log_action('Tokenizing sentences'):
                 continue
             sentences_path.parent.mkdir(exist_ok=True, parents=True)
             # Should take a bit less than 10 minutes each
-            job = executor.submit(sentence_tokenize_subshard, subshard_path, sentences_path, language)
+            job = executor.submit(sentence_tokenize_subshard,
+                                  subshard_path, sentences_path, language)
             jobs.append(job)
     print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 embeddings_type_name = f'laser_{language}'
-get_embeddings = lambda sentences: get_laser_embeddings(
+
+
+def get_embeddings(sentences): return get_laser_embeddings(
     sentences, max_tokens=3000, language=language, n_encoding_jobs=10
 )  # noqa: E731
+
 
 # Create base index
 with log_action('Creating base index'):
@@ -121,7 +130,8 @@ with log_action('Creating base index'):
 # Compute embeddings
 with log_action('Computing embeddings'):
     cache_dir = get_cache_dir(dataset_dir) / embeddings_type_name
-    indexes_dir = cache_dir / 'indexes' / f'base-index-{get_file_hash(base_index_path)}'
+    indexes_dir = cache_dir / 'indexes' / \
+        f'base-index-{get_file_hash(base_index_path)}'
     indexes_dir.mkdir(exist_ok=True, parents=True)
     db_sentences_paths = get_sentences_paths(dataset_dir)
     query_sentences_paths = db_sentences_paths
@@ -191,7 +201,7 @@ with log_action('Filtering candidate paraphrases'):
     jobs = []
     paraphrase_pairs = []
     i = 0
-    is_simpler = lambda pair: True  # noqa: E731
+    def is_simpler(pair): return True  # noqa: E731
     # Only used when mining simplifications
     if filter_kwargs.get('simplicity', 0) > 0:
         while len(paraphrase_pairs) < 10000:
@@ -210,7 +220,7 @@ with log_action('Filtering candidate paraphrases'):
             i += 1
         simplicity_scorer = SimplicityScorer(language=language)
         simplicity_scorer.fit(paraphrase_pairs)
-        is_simpler = lambda pair: simplicity_scorer.score(*pair) > filter_kwargs['simplicity']  # noqa: E731
+        def is_simpler(pair): return simplicity_scorer.score(*pair) > filter_kwargs['simplicity']  # noqa: E731
     executor = get_executor(
         cluster=cluster,
         slurm_partition=slurm_partition,

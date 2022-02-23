@@ -62,6 +62,7 @@ def has_low_lm_prob(text, language):
         'fr': (RESOURCES_DIR / 'models/language_models/kenlm_frwiki', -0.6),
         'es': (RESOURCES_DIR / 'models/language_models/kenlm_ccnet_es', -0.8),
         'it': (RESOURCES_DIR / 'models/language_models/kenlm_ccnet_it', -0.8),
+        'nl': (RESOURCES_DIR / 'models/language_models/kenlm_ccnet_nl', -1.1),
     }[language]
     if not model_dir.exists():
         print(
@@ -72,13 +73,17 @@ def has_low_lm_prob(text, language):
 
 
 def sentence_tokenize_document(document, language):
-    document = document.replace('\n', ' ').replace('\x00', ' ').replace('\t', ' ')
+    document = document.replace('\n', ' ').replace(
+        '\x00', ' ').replace('\t', ' ')
     document = normalize_punctuation(normalize_unicode(document))
-    sentences = list(yield_sentence_concatenations(document, min_length=10, max_length=300, language=language))
+    sentences = list(yield_sentence_concatenations(
+        document, min_length=10, max_length=300, language=language))
     # Filter out sentences (too short, too much punctuation, low lm prob)
     sentences = list(filter(lambda sentence: len(sentence) >= 30, sentences))
-    sentences = list(filter(lambda sentence: not has_too_much_punctuation(sentence), sentences))
-    sentences = list(filter(lambda sentence: not has_low_lm_prob(sentence, language), sentences))
+    sentences = list(
+        filter(lambda sentence: not has_too_much_punctuation(sentence), sentences))
+    sentences = list(
+        filter(lambda sentence: not has_low_lm_prob(sentence, language), sentences))
     return sentences
 
 
@@ -87,7 +92,8 @@ def sentence_tokenize_subshard(subshard_path, sentences_path, language):
         with log_action('Sentence tokenization'):
             with gzip.open(sentences_path, 'wt', compresslevel=1) as f:
                 for json_document in tqdm(yield_json_documents_from_compressed(subshard_path), desc='documents'):
-                    sentences = sentence_tokenize_document(json_document.pop('raw_content'), language=language)
+                    sentences = sentence_tokenize_document(
+                        json_document.pop('raw_content'), language=language)
                     for sentence in sentences:
                         f.write(f'{sentence}\n')
         cached_count_lines(sentences_path)  # Cache line count
@@ -112,7 +118,8 @@ def get_index_name():
     sq_size = 8
     pca_dim = 512
     embeddings_dim = 1024
-    index_size = (n_total_samples * embeddings_dim * 4) / (32 / sq_size) / (embeddings_dim / pca_dim)
+    index_size = (n_total_samples * embeddings_dim * 4) / \
+        (32 / sq_size) / (embeddings_dim / pca_dim)
     print(f'Expected index size: {index_size // 1e9}GB')
     return f'PCAR{pca_dim},IVF{n_cells},SQ{sq_size}'
 
@@ -124,7 +131,8 @@ def create_base_index(sentences, index_name, get_embeddings, metric, output_dir)
         with log_action('Computing embeddings'):
             embeddings = get_embeddings(sentences)
         with log_action('Training index'):
-            index = faiss.index_factory(embeddings.shape[1], index_name, metric)
+            index = faiss.index_factory(
+                embeddings.shape[1], index_name, metric)
             index.train(embeddings)
         faiss.write_index(index, str(index_path))
     return index_path

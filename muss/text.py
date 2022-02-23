@@ -24,7 +24,8 @@ def extract_special_tokens(sentence):
 @lru_cache(maxsize=100)  # To speed up subsequent calls
 def word_tokenize(sentence, language='en'):
     special_tokens, sentence = extract_special_tokens(sentence)
-    tokenized_sentence = ' '.join([tok.text for tok in spacy_process(sentence, language=language)])
+    tokenized_sentence = ' '.join(
+        [tok.text for tok in spacy_process(sentence, language=language)])
     if special_tokens != '':
         tokenized_sentence = f'{special_tokens} {tokenized_sentence}'
     return tokenized_sentence
@@ -55,7 +56,8 @@ def moses_word_detokenize(sentence, language='en'):
 
 
 def word_detokenize(sentence, backend='moses', **kwargs):
-    detokenize_function = {'moses': moses_word_detokenize, 'nltk': nltk_word_detokenize}[backend]
+    detokenize_function = {'moses': moses_word_detokenize,
+                           'nltk': nltk_word_detokenize}[backend]
     return detokenize_function(sentence, **kwargs)
 
 
@@ -74,6 +76,7 @@ def get_sentence_tokenizer(language='en'):
         'es': 'spanish',
         'it': 'italian',
         'de': 'german',
+        'nl': 'dutch',
     }[language]
     return nltk.data.load(f'tokenizers/punkt/{language}.pickle')
 
@@ -161,7 +164,8 @@ unostentatious 5
 
 fallback_cache = {}
 
-fallback_subsyl = ["cial", "tia", "cius", "cious", "gui", "ion", "iou", "sia$", ".ely$"]
+fallback_subsyl = ["cial", "tia", "cius",
+                   "cious", "gui", "ion", "iou", "sia$", ".ely$"]
 
 fallback_addsyl = [
     "ia",
@@ -280,7 +284,8 @@ def get_spacy_tokenizer(language='en'):
 
 def get_spacy_content_tokens(text, language='en'):
     def is_content_token(token):
-        return not token.is_stop and not token.is_punct and token.ent_type_ == ''  # Not named entity
+        # Not named entity
+        return not token.is_stop and not token.is_punct and token.ent_type_ == ''
 
     return [token for token in get_spacy_tokenizer(language=language)(text) if is_content_token(token)]
 

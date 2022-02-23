@@ -26,7 +26,8 @@ def get_job_id():
 
 def make_function_checkpointable(function):
     def checkpoint(*args, **kwargs):
-        return DelayedSubmission(function, *args, **kwargs)  # submits to requeuing
+        # submits to requeuing
+        return DelayedSubmission(function, *args, **kwargs)
 
     function.checkpoint = checkpoint
     return function
@@ -73,7 +74,7 @@ def get_executor(
     if cpus_per_task is None:
         cpus_per_task = gpus_per_node * 10
     if mem_gb is None:
-        mem_gb = gpus_per_node * 64
+        mem_gb = gpus_per_node * 32
     executor.update_parameters(
         timeout_min=timeout_min,
         slurm_partition=slurm_partition,
