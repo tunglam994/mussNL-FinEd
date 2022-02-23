@@ -56,7 +56,7 @@ with log_action('Splitting CCNet shards into smaller subshards'):
         'en': 15,
         'fr': 25,
         'es': 13,
-        'nl': 2,  # We would need about 20 shards for 1B sentences, but there are only 13
+        'nl': 5,  # We would need about 20 shards for 1B sentences, but there are only 13
     }[language]
     ccnet_filepaths = [
         ccnet_dir / f'{language}_head_{i:04d}.json.gz' for i in range(n_shards)]
@@ -64,7 +64,7 @@ with log_action('Splitting CCNet shards into smaller subshards'):
     raw_original_dir.mkdir(exist_ok=True, parents=True)
     output_dirs = [raw_original_dir /
                    f'{language}_head_{i:04d}' for i in range(n_shards)]
-    n_docs_per_file = 10000
+    n_docs_per_file = 50000
     executor = get_executor(cluster=cluster, slurm_partition='dev',
                             timeout_min=1 * 30, slurm_array_parallelism=16)
     jobs = []
