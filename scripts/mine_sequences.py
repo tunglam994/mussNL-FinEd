@@ -6,6 +6,7 @@
 
 from pathlib import Path
 
+
 import faiss
 from tqdm import tqdm
 
