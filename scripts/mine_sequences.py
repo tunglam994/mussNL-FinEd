@@ -52,12 +52,15 @@ slurm_array_parallelism = 1024
 # Split CCNet shards into subshards
 with log_action('Splitting CCNet shards into smaller subshards'):
     # We need to split each shard even more for the LASER embeddings to fit in memory
-    n_shards = {  # Number of shards to take for each languages for ~1B sentences
-        'en': 15,
-        'fr': 25,
-        'es': 13,
-        'nl': 5,  # We would need about 20 shards for 1B sentences, but there are only 13
-    }[language]
+    # n_shards = {  # Number of shards to take for each languages for ~1B sentences
+    #    'en': 15,
+    #    'fr': 25,
+    #    'es': 13,
+    #    'nl': 4,  # We would need about 20 shards for 1B sentences, but there are only 13
+    # }[language]
+
+    n_shards = int(input('Number of main shards: '))
+
     ccnet_filepaths = [
         ccnet_dir / f'{language}_head_{i:04d}.json.gz' for i in range(n_shards)]
     raw_original_dir = dataset_dir / 'raw_original'
