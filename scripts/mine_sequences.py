@@ -47,8 +47,11 @@ cluster = 'local'
 dataset_dir = get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
-#slurm_array_parallelism = 1024
-slurm_array_parallelism = input('Slurm array parallelism: ')
+slurm_array_parallelism = 1024
+#slurm_array_parallelism = input('Slurm array parallelism: ')
+
+n_jobs_encoding = input(
+    'Number of parallel get-embedding jobs (memory hungry): ')
 
 # Split CCNet shards into subshards
 with log_action('Splitting CCNet shards into smaller subshards'):
@@ -110,7 +113,7 @@ embeddings_type_name = f'laser_{language}'
 
 
 def get_embeddings(sentences): return get_laser_embeddings(
-    sentences, max_tokens=3000, language=language, n_encoding_jobs=10
+    sentences, max_tokens=3000, language=language, n_encoding_jobs=n_jobs_encoding
 )  # noqa: E731
 
 
