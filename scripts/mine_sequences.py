@@ -47,8 +47,8 @@ cluster = 'local'
 dataset_dir = get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
-slurm_array_parallelism = 1024
-#slurm_array_parallelism = int(input('Slurm array parallelism: '))
+#slurm_array_parallelism = 1024
+slurm_array_parallelism = int(input('Slurm array parallelism: '))
 
 n_jobs_encoding = int(input(
     'Number of parallel get-embedding jobs (memory hungry): '))
