@@ -47,8 +47,8 @@ cluster = 'local'
 dataset_dir = get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
-#slurm_array_parallelism = 1024
-slurm_array_parallelism = int(input('Slurm array parallelism: '))
+slurm_array_parallelism = 1024
+#slurm_array_parallelism = int(input('Slurm array parallelism: '))
 
 n_jobs_encoding = int(input(
     'Number of parallel get-embedding jobs (memory hungry): '))
@@ -144,24 +144,32 @@ with log_action('Computing embeddings'):
     indexes_dir.mkdir(exist_ok=True, parents=True)
     db_sentences_paths = get_sentences_paths(dataset_dir)
     query_sentences_paths = db_sentences_paths
-    executor = get_executor(
-        cluster=cluster,
-        slurm_partition=slurm_partition,
-        timeout_min=2 * 60,
-        slurm_array_parallelism=slurm_array_parallelism,
-    )
-    jobs = []
-    with executor.batch():
-        for sentences_path in set(query_sentences_paths + db_sentences_paths):
-            if get_index_path(sentences_path, indexes_dir).exists():
-                continue
-            # Should take about 30 minutes each
-            job = executor.submit(
-                compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-            )
-            jobs.append(job)
-    print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]
+# =============================================================================
+#     executor = get_executor(
+#         cluster=cluster,
+#         slurm_partition=slurm_partition,
+#         timeout_min=2 * 60,
+#         slurm_array_parallelism=slurm_array_parallelism,
+#     )
+#     jobs = []
+#     with executor.batch():
+#         for sentences_path in set(query_sentences_paths + db_sentences_paths):
+#             if get_index_path(sentences_path, indexes_dir).exists():
+#                 continue
+#             # Should take about 30 minutes each
+#             job = executor.submit(
+#                 compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+#             )
+#             jobs.append(job)
+#     print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
+# =============================================================================
+
+    for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
+        if get_index_path(sentences_path, indexes_dir).exists():
+            continue
+        compute_and_save_embeddings(
+            sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
 
 # Mine the paraphrases
 with log_action('Mining paraphrases'):
