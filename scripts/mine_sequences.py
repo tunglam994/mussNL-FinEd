@@ -177,32 +177,40 @@ with log_action('Mining paraphrases'):
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
     topk = 8
     nprobe = 16
-    executor = get_executor(
-        cluster=cluster,
-        slurm_partition=slurm_partition,
-        timeout_min=2 * 60,
-        slurm_array_parallelism=slurm_array_parallelism,
-    )
-    jobs = []
-    # Run NN search query file by query file
-    with executor.batch():
-        for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-            if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
-                continue
-            # Should take about ~1h30 each
-            job = executor.submit(
-                compute_and_save_nn_batched,
-                query_sentences_path,
-                db_sentences_paths,
-                topk,
-                nprobe,
-                indexes_dir,
-                nn_search_results_dir,
-                delete_intermediary=True,
-            )
-            jobs.append(job)
-    print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]
+# =============================================================================
+#     executor = get_executor(
+#         cluster=cluster,
+#         slurm_partition=slurm_partition,
+#         timeout_min=2 * 60,
+#         slurm_array_parallelism=slurm_array_parallelism,
+#     )
+#     jobs = []
+#     # Run NN search query file by query file
+#     with executor.batch():
+#         for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
+#             if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
+#                 continue
+#             # Should take about ~1h30 each
+#             job = executor.submit(
+#                 compute_and_save_nn_batched,
+#                 query_sentences_path,
+#                 db_sentences_paths,
+#                 topk,
+#                 nprobe,
+#                 indexes_dir,
+#                 nn_search_results_dir,
+#                 delete_intermediary=True,
+#             )
+#             jobs.append(job)
+#     print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
+# =============================================================================
+
+    for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
+        if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
+            continue
+        compute_and_save_nn_batched(query_sentences_path, db_sentences_paths,
+                                    topk, nprobe, indexes_dir, nn_search_results_dir, delete_intermediary=True,)
 
 # Filter candidate paraphrases
 with log_action('Filtering candidate paraphrases'):
