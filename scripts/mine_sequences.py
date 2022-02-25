@@ -47,7 +47,8 @@ cluster = 'local'
 dataset_dir = get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
-slurm_array_parallelism = 1024
+#slurm_array_parallelism = 1024
+slurm_array_parallelism = input('Slurm array parallelism: ')
 
 # Split CCNet shards into subshards
 with log_action('Splitting CCNet shards into smaller subshards'):
