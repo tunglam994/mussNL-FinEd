@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
+from concurrent import futures
 
 
 import faiss
@@ -165,11 +166,27 @@ with log_action('Computing embeddings'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
-        if get_index_path(sentences_path, indexes_dir).exists():
-            continue
-        compute_and_save_embeddings(
-            sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
+    jobs = []
+    with futures.ThreadPoolExecutor(max_workers=2) as executor:
+        for sentences_path in set(query_sentences_paths + db_sentences_paths):
+            if get_index_path(sentences_path, indexes_dir).exists():
+                continue
+            # Should take about 30 minutes each
+            job = executor.submit(
+                compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+            )
+            jobs.append(job)
+    #print([job.job_id for job in jobs])
+    [job.result() for job in tqdm(jobs)]
+
+
+# =============================================================================
+#     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
+#         if get_index_path(sentences_path, indexes_dir).exists():
+#             continue
+#         compute_and_save_embeddings(
+#             sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
+# =============================================================================
 
 # Mine the paraphrases
 with log_action('Mining paraphrases'):
