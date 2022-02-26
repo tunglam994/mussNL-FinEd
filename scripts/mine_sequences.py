@@ -54,6 +54,9 @@ slurm_array_parallelism = 1024
 # int(input('Number of parallel get-embedding jobs (memory hungry): '))
 n_jobs_encoding = 10
 
+max_workers = int(
+    input('Maximum number of parallel compute embedding processes: '))
+
 # Split CCNet shards into subshards
 with log_action('Splitting CCNet shards into smaller subshards'):
     # We need to split each shard even more for the LASER embeddings to fit in memory
@@ -167,7 +170,7 @@ with log_action('Computing embeddings'):
 # =============================================================================
 
     jobs = []
-    with futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for sentences_path in set(query_sentences_paths + db_sentences_paths):
             if get_index_path(sentences_path, indexes_dir).exists():
                 continue
