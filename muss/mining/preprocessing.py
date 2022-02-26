@@ -20,6 +20,8 @@ from muss.utils.helpers import batch_items, log_action, yield_lines
 from muss.resources.paths import RESOURCES_DIR
 from muss.mining.nn_search import cached_count_lines
 
+from npy_append_array import NpyAppendArray
+
 
 def yield_json_documents_from_compressed(compressed_path):
     for document in yield_lines(compressed_path, gzipped=True):
@@ -127,12 +129,24 @@ def get_index_name():
 def create_base_index(sentences, index_name, get_embeddings, metric, output_dir):
     index_prefix = f'{index_name.replace(",", "_").lower()}_metric{metric}'
     index_path = output_dir / f'{index_prefix}.faiss_index'
+
+    def chunker(seq, size):
+        return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
     if not index_path.exists():
         with log_action('Computing embeddings'):
-            embeddings = get_embeddings(sentences)
+            filename = 'base_embeddings.npy'
+            for sentence_group in chunker(sentences, 500000):
+                embeddings = get_embeddings(sentence_group)
+
+                with NpyAppendArray(filename) as npaa:
+                    npaa.append(embeddings)
+
+            #embeddings = get_embeddings(sentences)
         with log_action('Training index'):
             index = faiss.index_factory(
                 embeddings.shape[1], index_name, metric)
+            embeddings = np.load(filename, mmap_mode="r")
             index.train(embeddings)
         faiss.write_index(index, str(index_path))
     return index_path
