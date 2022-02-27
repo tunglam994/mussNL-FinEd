@@ -21,6 +21,7 @@ from muss.resources.paths import RESOURCES_DIR
 from muss.mining.nn_search import cached_count_lines
 
 from npy_append_array import NpyAppendArray
+import os
 
 
 def yield_json_documents_from_compressed(compressed_path):
@@ -148,5 +149,6 @@ def create_base_index(sentences, index_name, get_embeddings, metric, output_dir)
                 embeddings.shape[1], index_name, metric)
             embeddings = np.load(filename, mmap_mode="r")
             index.train(embeddings)
+        os.remove(filename)
         faiss.write_index(index, str(index_path))
     return index_path
