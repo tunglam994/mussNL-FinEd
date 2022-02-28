@@ -45,7 +45,7 @@ ccnet_dir = Path(
 )
 language = input('What language do you want to process? (en/fr/es/nl): ')
 cluster = 'local'
-dataset_dir = get_dataset_dir('uts') / language
+dataset_dir = ccnet_dir / 'uts' / language  # get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
 slurm_array_parallelism = 1024
@@ -54,8 +54,8 @@ slurm_array_parallelism = 1024
 # int(input('Number of parallel get-embedding jobs (memory hungry): '))
 n_jobs_encoding = 10
 
-max_workers = int(
-    input('Maximum number of parallel compute embedding processes: '))
+# int(input('Maximum number of parallel compute embedding processes: '))
+max_workers = 6
 
 # Split CCNet shards into subshards
 with log_action('Splitting CCNet shards into smaller subshards'):
@@ -75,8 +75,8 @@ with log_action('Splitting CCNet shards into smaller subshards'):
     raw_original_dir.mkdir(exist_ok=True, parents=True)
     output_dirs = [raw_original_dir /
                    f'{language}_head_{i:04d}' for i in range(n_shards)]
-    n_docs_per_file = int(input(
-        'How many sentences should be added to each subshard: '))
+    # int(input('How many sentences should be added to each subshard: '))
+    n_docs_per_file = 50000
     executor = get_executor(cluster=cluster, slurm_partition='dev',
                             timeout_min=1 * 30, slurm_array_parallelism=16)
     jobs = []
