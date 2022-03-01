@@ -134,7 +134,7 @@ with log_action('Tokenizing sentences'):
 # =============================================================================
 
     jobs = []
-    with futures.ThreadPoolExecutor(max_workers=20) as executor:
+    with futures.ThreadPoolExecutor(max_workers=8) as executor:
         for i, subshard_path in enumerate(subshard_paths):
             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
             if sentences_path.exists():
