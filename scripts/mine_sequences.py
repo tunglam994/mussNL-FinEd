@@ -131,18 +131,27 @@ with log_action('Tokenizing sentences'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    jobs = []
-    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for i, subshard_path in enumerate(subshard_paths):
-            sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
-            if sentences_path.exists():
-                continue
-            sentences_path.parent.mkdir(exist_ok=True, parents=True)
-            job = executor.submit(sentence_tokenize_subshard,
-                                  subshard_path, sentences_path, language)
-            jobs.append(job)
-    #print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]
+    for i, subshard_path in tqdm(enumerate(subshard_paths)):
+        sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
+        if sentences_path.exists():
+            continue
+        sentences_path.parent.mkdir(exist_ok=True, parents=True)
+        sentence_tokenize_subshard(subshard_path, sentences_path, language)
+
+# =============================================================================
+#     jobs = []
+#     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+#         for i, subshard_path in enumerate(subshard_paths):
+#             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
+#             if sentences_path.exists():
+#                 continue
+#             sentences_path.parent.mkdir(exist_ok=True, parents=True)
+#             job = executor.submit(sentence_tokenize_subshard,
+#                                   subshard_path, sentences_path, language)
+#             jobs.append(job)
+#     #print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
+# =============================================================================
 
 embeddings_type_name = f'laser_{language}'
 
