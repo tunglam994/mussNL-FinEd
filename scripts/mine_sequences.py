@@ -78,40 +78,70 @@ with log_action('Splitting CCNet shards into smaller subshards'):
                    f'{language}_head_{i:04d}' for i in range(n_shards)]
     # int(input('How many sentences should be added to each subshard: '))
     n_docs_per_file = 50000
-    executor = get_executor(cluster=cluster, slurm_partition='dev',
-                            timeout_min=1 * 30, slurm_array_parallelism=16)
+# =============================================================================
+#     executor = get_executor(cluster=cluster, slurm_partition='dev',
+#                             timeout_min=1 * 30, slurm_array_parallelism=16)
+#     jobs = []
+#     with executor.batch():
+#         for ccnet_filepath, output_dir in zip(ccnet_filepaths, output_dirs):
+#             if output_dir.exists():
+#                 continue
+#             job = executor.submit(
+#                 split_ccnet_shard, ccnet_filepath, output_dir, n_docs_per_file)
+#             jobs.append(job)
+#     print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]  # Wait for the jobs to finish
+# =============================================================================
+
     jobs = []
-    with executor.batch():
+    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for ccnet_filepath, output_dir in zip(ccnet_filepaths, output_dirs):
             if output_dir.exists():
                 continue
-            job = executor.submit(
-                split_ccnet_shard, ccnet_filepath, output_dir, n_docs_per_file)
+            job = executor.submit(split_ccnet_shard, ccnet_filepath,
+                                  output_dir, n_docs_per_file)
             jobs.append(job)
-    print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]  # Wait for the jobs to finish
+    #print([job.job_id for job in jobs])
+    [job.result() for job in tqdm(jobs)]
 
 # Sentence tokenization
 with log_action('Tokenizing sentences'):
-    executor = get_executor(
-        cluster=cluster,
-        slurm_partition=slurm_partition,
-        timeout_min=2 * 60,
-        slurm_array_parallelism=slurm_array_parallelism,
-    )
+    # =============================================================================
+    #     executor = get_executor(
+    #         cluster=cluster,
+    #         slurm_partition=slurm_partition,
+    #         timeout_min=2 * 60,
+    #         slurm_array_parallelism=slurm_array_parallelism,
+    #     )
+    # =============================================================================
     subshard_paths = get_subshard_paths(raw_original_dir)
+# =============================================================================
+#     jobs = []
+#     with executor.batch():
+#         for i, subshard_path in enumerate(subshard_paths):
+#             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
+#             if sentences_path.exists():
+#                 continue
+#             sentences_path.parent.mkdir(exist_ok=True, parents=True)
+#             # Should take a bit less than 10 minutes each
+#             job = executor.submit(sentence_tokenize_subshard,
+#                                   subshard_path, sentences_path, language)
+#             jobs.append(job)
+#     print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
+# =============================================================================
+
     jobs = []
-    with executor.batch():
+    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for i, subshard_path in enumerate(subshard_paths):
             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
             if sentences_path.exists():
                 continue
             sentences_path.parent.mkdir(exist_ok=True, parents=True)
-            # Should take a bit less than 10 minutes each
             job = executor.submit(sentence_tokenize_subshard,
                                   subshard_path, sentences_path, language)
             jobs.append(job)
-    print([job.job_id for job in jobs])
+    #print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 embeddings_type_name = f'laser_{language}'
