@@ -43,14 +43,14 @@ ccnet_dir = Path(
         'Please download the CCNet corpus from https://github.com/facebookresearch/cc_net and enter the path to the downloaded data: '
     )
 )
-#language = input('What language do you want to process? (en/fr/es/nl): ')
+# language = input('What language do you want to process? (en/fr/es/nl): ')
 language = 'nl'
 cluster = 'local'
 dataset_dir = ccnet_dir / 'uts' / language  # get_dataset_dir('uts') / language
 # For large jobs only
 slurm_partition = 'dev,scavenge'
 slurm_array_parallelism = 1024
-#slurm_array_parallelism = int(input('Slurm array parallelism: '))
+# slurm_array_parallelism = int(input('Slurm array parallelism: '))
 
 # int(input('Number of parallel get-embedding jobs (memory hungry): '))
 n_jobs_encoding = 10
@@ -101,42 +101,41 @@ with log_action('Splitting CCNet shards into smaller subshards'):
             job = executor.submit(split_ccnet_shard, ccnet_filepath,
                                   output_dir, n_docs_per_file)
             jobs.append(job)
-    #print([job.job_id for job in jobs])
+    # print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 # Sentence tokenization
 with log_action('Tokenizing sentences'):
-    # =============================================================================
-    #     executor = get_executor(
-    #         cluster=cluster,
-    #         slurm_partition=slurm_partition,
-    #         timeout_min=2 * 60,
-    #         slurm_array_parallelism=slurm_array_parallelism,
-    #     )
-    # =============================================================================
-    subshard_paths = get_subshard_paths(raw_original_dir)
-# =============================================================================
-#     jobs = []
-#     with executor.batch():
-#         for i, subshard_path in enumerate(subshard_paths):
-#             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
-#             if sentences_path.exists():
-#                 continue
-#             sentences_path.parent.mkdir(exist_ok=True, parents=True)
-#             # Should take a bit less than 10 minutes each
-#             job = executor.submit(sentence_tokenize_subshard,
-#                                   subshard_path, sentences_path, language)
-#             jobs.append(job)
-#     print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]
-# =============================================================================
 
-    for i, subshard_path in tqdm(enumerate(subshard_paths)):
-        sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
-        if sentences_path.exists():
-            continue
-        sentences_path.parent.mkdir(exist_ok=True, parents=True)
-        sentence_tokenize_subshard(subshard_path, sentences_path, language)
+    executor = get_executor(
+        cluster=cluster,
+        slurm_partition=slurm_partition,
+        timeout_min=2 * 60,
+        slurm_array_parallelism=slurm_array_parallelism,)
+
+    subshard_paths = get_subshard_paths(raw_original_dir)
+    jobs = []
+    with executor.batch():
+        for i, subshard_path in enumerate(subshard_paths):
+            sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
+            if sentences_path.exists():
+                continue
+            sentences_path.parent.mkdir(exist_ok=True, parents=True)
+            # Should take a bit less than 10 minutes each
+            job = executor.submit(sentence_tokenize_subshard,
+                                  subshard_path, sentences_path, language)
+            jobs.append(job)
+    print([job.job_id for job in jobs])
+    [job.result() for job in tqdm(jobs)]
+
+# =============================================================================
+#     for i, subshard_path in tqdm(enumerate(subshard_paths)):
+#         sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
+#         if sentences_path.exists():
+#             continue
+#         sentences_path.parent.mkdir(exist_ok=True, parents=True)
+#         sentence_tokenize_subshard(subshard_path, sentences_path, language)
+# =============================================================================
 
 # =============================================================================
 #     jobs = []
@@ -219,7 +218,7 @@ with log_action('Computing embeddings'):
                 compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
             )
             jobs.append(job)
-    #print([job.job_id for job in jobs])
+    # print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 
@@ -361,7 +360,7 @@ with log_action('Filtering candidate paraphrases'):
                                   filter_kwargs=filter_kwargs,
                                   is_simpler=is_simpler)
             jobs.append(job)
-    #print([job.job_id for job in jobs])
+    # print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 
