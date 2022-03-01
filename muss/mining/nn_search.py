@@ -44,7 +44,8 @@ def get_cache_dir(dataset_dir):
 @lru_cache(maxsize=10000)
 def cached_count_lines(filepath):
     '''We store the result because its quite long to compute compared to how often we need it'''
-    line_count_path = filepath.parent / f'.file-{get_file_hash(filepath)}.line_counts.txt'
+    line_count_path = filepath.parent / \
+        f'.file-{get_file_hash(filepath)}.line_counts.txt'
     line_count_path.parent.mkdir(exist_ok=True, parents=True)
     if not line_count_path.exists():
         line_count_path.touch()
@@ -117,7 +118,8 @@ def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=102
         start_idx = batch_idx * batch_size
         end_idx = min(start_idx + batch_size, query_index.ntotal)
         actual_batch_size = end_idx - start_idx
-        query_embeddings = query_index.reconstruct_n(start_idx, actual_batch_size)  # TODO: Do this in the background
+        query_embeddings = query_index.reconstruct_n(
+            start_idx, actual_batch_size)  # TODO: Do this in the background
         distances, sentence_ids = db_index.search(query_embeddings, topk)
         all_distances[start_idx:end_idx] = distances
         all_sentence_ids[start_idx:end_idx] = sentence_ids
@@ -130,12 +132,14 @@ def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=102
 
 
 def dump_results(distances, sentence_ids, results_path):
-    np.savez(results_path, distances=distances, sentence_ids=sentence_ids, allow_pickle=False)
+    np.savez(results_path, distances=distances,
+             sentence_ids=sentence_ids, allow_pickle=False)
     return results_path
 
 
 def load_results(results_path):
-    assert results_path.exists(), f'Results path does not exist.\nresults_path={results_path}'
+    assert results_path.exists(
+    ), f'Results path does not exist.\nresults_path={results_path}'
     try:
         results = np.load(results_path, allow_pickle=False)
         return results['distances'], results['sentence_ids']
@@ -146,12 +150,15 @@ def load_results(results_path):
 
 
 def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir):
-    results_path = get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
+    results_path = get_results_path(
+        query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
     if results_path.exists():
         return results_path
     query_index = load_index(get_index_path(query_sentences_path, indexes_dir))
-    db_index = load_indexes([get_index_path(sentences_path, indexes_dir) for sentences_path in db_sentences_paths])
-    distances, sentence_ids = get_nearest_sentence_ids(query_index, db_index, topk, nprobe)
+    db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
+                            for sentences_path in db_sentences_paths])
+    distances, sentence_ids = get_nearest_sentence_ids(
+        query_index, db_index, topk, nprobe)
     dump_results(distances, sentence_ids, results_path)
     return results_path
 
@@ -219,7 +226,8 @@ def compute_and_save_nn_batched(
         )
         intermediary_results_paths.append(intermediary_results_path)
         offsets.append(offset)
-        offset += sum([cached_count_lines(sentences_path) for sentences_path in db_sentences_paths_batch])
+        offset += sum([cached_count_lines(sentences_path)
+                      for sentences_path in db_sentences_paths_batch])
     if len(intermediary_results_paths) == 1:
         assert combined_results_path == intermediary_results_paths[0]
     else:
@@ -241,7 +249,8 @@ def get_candidate_pair_ids(distances, sentence_ids, distance_threshold, density_
     mean_distances = distances.mean(axis=1)
     densities = distances / mean_distances.reshape(-1, 1)
     # Take only ids that are close enough
-    query_sentence_ids = torch.arange(sentence_ids.shape[0]).reshape(-1, 1).repeat(1, sentence_ids.shape[1])
+    query_sentence_ids = torch.arange(
+        sentence_ids.shape[0]).reshape(-1, 1).repeat(1, sentence_ids.shape[1])
     lower_distance_threshold = 1e-10  # To filter out exact matches
     mask = (
         (np.abs(distances) > lower_distance_threshold)
@@ -271,21 +280,25 @@ def get_sentences_from_ids(sentence_ids, sentences_paths):
     sorted_idx = np.argsort(sentence_ids)
     sentence_ids = sentence_ids[sorted_idx]
     ids_per_file = defaultdict(list)
-    n_sentences_list = [cached_count_lines(sentences_path) for sentences_path in sentences_paths]
+    n_sentences_list = [cached_count_lines(
+        sentences_path) for sentences_path in sentences_paths]
     offsets = np.cumsum([0] + n_sentences_list[:-1])
     next_offsets = np.cumsum(n_sentences_list)
     sentence_ids = np.sort(sentence_ids)
     for offset, next_offset, sentences_path in zip(offsets, next_offsets, sentences_paths):
-        selected_sentence_ids = sentence_ids[(offset <= sentence_ids) & (sentence_ids < next_offset)]
+        selected_sentence_ids = sentence_ids[(
+            offset <= sentence_ids) & (sentence_ids < next_offset)]
         if len(selected_sentence_ids) > 0:
             selected_sentence_ids -= offset
             ids_per_file[sentences_path].extend(selected_sentence_ids.tolist())
     # The sentences should be returned in the correct order because python dicts are insertion ordered
     sentences_list = Parallel(n_jobs=10)(
-        delayed(get_sentences_from_ids_single_file)(sentence_ids, sentences_path)
+        delayed(get_sentences_from_ids_single_file)(
+            sentence_ids, sentences_path)
         for sentences_path, sentence_ids in tqdm(ids_per_file.items(), desc='Load sentences')
     )
-    sentences = [sentence for sentences in sentences_list for sentence in sentences]
+    sentences = [
+        sentence for sentences in sentences_list for sentence in sentences]
     # Put sentences back in order
     return [sentences[idx] for idx in np.argsort(sorted_idx)]
 
@@ -294,10 +307,12 @@ def combine_results_over_queries(query_sentences_paths, db_sentences_paths, topk
     all_distances = np.empty((0, topk), dtype=float)
     all_sentence_ids = np.empty((0, topk), dtype=int)
     for query_sentences_path in tqdm(query_sentences_paths, desc='Combine queries'):
-        results_path = get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
+        results_path = get_results_path(
+            query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
         distances, sentence_ids = load_results(results_path)
         all_distances = np.concatenate([all_distances, distances], axis=0)
-        all_sentence_ids = np.concatenate([all_sentence_ids, sentence_ids], axis=0)
+        all_sentence_ids = np.concatenate(
+            [all_sentence_ids, sentence_ids], axis=0)
     return all_distances, all_sentence_ids
 
 
@@ -315,10 +330,12 @@ def find_nearest_neighbors(
     query_sentences_paths = list(sorted(query_sentences_paths))
     db_sentences_paths = list(sorted(db_sentences_paths))
     # Create indexes
-    indexes_dir = cache_dir / 'indexes' / f'base-index-{get_file_hash(base_index_path)}'
+    indexes_dir = cache_dir / 'indexes' / \
+        f'base-index-{get_file_hash(base_index_path)}'
     indexes_dir.mkdir(exist_ok=True, parents=True)
     for sentences_path in query_sentences_paths + db_sentences_paths:
-        compute_and_save_embeddings(sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
+        compute_and_save_embeddings(
+            sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
     # Run NN search query file by query file
     nn_search_results_dir = cache_dir / 'nn_search_results'
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
@@ -333,13 +350,15 @@ def find_nearest_neighbors(
     query_sentence_ids, db_sentence_ids = get_candidate_pair_ids(
         distances, sentence_ids, distance_threshold=distance_threshold, density_threshold=density_threshold
     )
-    query_sentences = get_sentences_from_ids(query_sentence_ids, query_sentences_paths)
+    query_sentences = get_sentences_from_ids(
+        query_sentence_ids, query_sentences_paths)
     db_sentences = get_sentences_from_ids(db_sentence_ids, db_sentences_paths)
     return list(zip(query_sentences, db_sentences))
 
 
 def get_pairs_path(query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir):
-    results_str = get_results_string_representation(query_sentences_path, db_sentences_paths, topk, nprobe)
+    results_str = get_results_string_representation(
+        query_sentences_path, db_sentences_paths, topk, nprobe)
     filter_str = get_filter_string_representation(filter_kwargs)
     return pairs_dir / f'pairs_{results_str}_{filter_str}.tsv'
 
@@ -365,7 +384,8 @@ def get_paraphrase_pairs(
         'is_overlapping': lambda pair: not is_overlapping(*pair),
     }
     if filter_kwargs.get('levenshtein', 0) > 0:
-        filters['is_different_enough'] = lambda pair: is_different_enough(*pair, threshold=filter_kwargs['levenshtein'])
+        filters['is_different_enough'] = lambda pair: is_different_enough(
+            *pair, threshold=filter_kwargs['levenshtein'])
     with log_action('filtering'):
         return filter_candidate_pairs(candidate_pairs, filters)
 
@@ -401,9 +421,11 @@ def compute_and_save_simplification_pairs(
             'is_simpler': is_simpler,
         }
         if filter_kwargs.get('filter_ne', True):
-            filters['has_hallucinated_ne'] = lambda pair: not has_hallucinated_named_entities(*pair, language=language)
+            filters['has_hallucinated_ne'] = lambda pair: not has_hallucinated_named_entities(
+                *pair, language=language)
         with log_action('filtering'):
-            simplification_pairs = filter_candidate_pairs(paraphrase_pairs, filters)
+            simplification_pairs = filter_candidate_pairs(
+                paraphrase_pairs, filters)
         write_pairs_to_file(simplification_pairs, simplifications_path)
     return simplifications_path
 
@@ -432,21 +454,24 @@ def get_simplification_pairs_paths(query_sentences_paths, db_sentences_paths, to
         simplification_pairs_path = get_pairs_path(
             query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
         )
-        simplification_pairs.extend(get_pairs_from_file(simplification_pairs_path))
+        simplification_pairs.extend(
+            get_pairs_from_file(simplification_pairs_path))
     return simplification_pairs
 
 
 def combine_simplifications_in_dataset(simplification_pairs, dataset):
     with create_directory_or_skip(get_dataset_dir(dataset)):
-        assert len(simplification_pairs) > 30000, f'Not enough pairs: {len(simplification_pairs)}'
+        assert len(
+            simplification_pairs) > 30000, f'Not enough pairs: {len(simplification_pairs)}'
         indexes = np.random.permutation(len(simplification_pairs))
         for phase, start_index, end_index in [
-            ('test', 10000, 20000),
-            ('valid', 20000, 30000),
-            ('train', 30000, len(indexes)),
+            ('test', 0, 10000),
+            ('valid', 10000, 20000),
+            ('train', 20000, len(indexes)),
         ]:
             with write_lines_in_parallel(
-                [get_data_filepath(dataset, phase, 'complex'), get_data_filepath(dataset, phase, 'simple')]
+                [get_data_filepath(dataset, phase, 'complex'),
+                 get_data_filepath(dataset, phase, 'simple')]
             ) as files:
                 for idx in tqdm(indexes[start_index:end_index]):
                     files.write(simplification_pairs[idx])
