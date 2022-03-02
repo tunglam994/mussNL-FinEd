@@ -137,17 +137,19 @@ def create_base_index(sentences, index_name, get_embeddings, metric, output_dir)
     if not index_path.exists():
         with log_action('Computing embeddings'):
             filename = 'base_embeddings.npy'
-            for sentence_group in chunker(sentences, 500000):
-                embeddings = get_embeddings(sentence_group)
+            if not os.path.isfile(filename):
+                for sentence_group in chunker(sentences, 500000):
+                    embeddings = get_embeddings(sentence_group)
 
-                with NpyAppendArray(filename) as npaa:
-                    npaa.append(embeddings)
+                    with NpyAppendArray(filename) as npaa:
+                        npaa.append(embeddings)
 
             #embeddings = get_embeddings(sentences)
         with log_action('Training index'):
+            embeddings = np.load(filename, mmap_mode="r")
             index = faiss.index_factory(
                 embeddings.shape[1], index_name, metric)
-            embeddings = np.load(filename, mmap_mode="r")
+            #embeddings = np.load(filename, mmap_mode="r")
             index.train(embeddings)
         os.remove(filename)
         faiss.write_index(index, str(index_path))

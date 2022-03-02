@@ -73,6 +73,7 @@ def get_predict_files(language):
             get_data_filepath('simplext_corpus', 'valid', 'complex'),
             get_data_filepath('simplext_corpus', 'test', 'complex'),
         ],
+        'nl': [get_data_filepath('nl_mined', 'valid', 'complex'), get_data_filepath('nl_mined', 'test', 'complex')],
     }[language]
 
 
@@ -99,6 +100,16 @@ def get_evaluate_kwargs(language, phase='valid'):
             'test_set': 'custom',
             'orig_sents_path': get_data_filepath('simplext_corpus', 'test', 'complex'),
             'refs_sents_paths': [get_data_filepath('simplext_corpus', 'test', 'simple')],
+        },
+        ('nl', 'valid'): {
+            'test_set': 'custom',
+            'orig_sents_path': get_data_filepath('nl_mined', 'valid', 'complex'),
+            'refs_sents_paths': [get_data_filepath('nl_mined', 'valid', 'simple')],
+        },
+        ('nl', 'test'): {
+            'test_set': 'custom',
+            'orig_sents_path': get_data_filepath('nl_mined', 'test', 'complex'),
+            'refs_sents_paths': [get_data_filepath('nl_mined', 'test', 'simple')],
         },
     }[(language, phase)]
 
@@ -142,7 +153,8 @@ def get_transformer_kwargs(dataset, language, use_access, use_short_name=False):
     }
     if use_access:
         kwargs['preprocessors_kwargs'] = add_dicts(
-            get_access_preprocessors_kwargs(language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
+            get_access_preprocessors_kwargs(
+                language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
         )
     return kwargs
 
@@ -197,7 +209,8 @@ def get_bart_kwargs(dataset, language, use_access, use_short_name=False, bart_mo
     }
     if use_access:
         kwargs['preprocessors_kwargs'] = add_dicts(
-            get_access_preprocessors_kwargs(language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
+            get_access_preprocessors_kwargs(
+                language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
         )
     return kwargs
 
@@ -239,7 +252,8 @@ def get_mbart_kwargs(dataset, language, use_access, use_short_name=False):
     }
     if use_access:
         kwargs['preprocessors_kwargs'] = add_dicts(
-            get_access_preprocessors_kwargs(language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
+            get_access_preprocessors_kwargs(
+                language, use_short_name=use_short_name), kwargs['preprocessors_kwargs']
         )
     return kwargs
 
@@ -287,7 +301,8 @@ def get_all_baseline_rows():
         ('simplext_corpus_all_fixed', 'valid'): (
             'es',
             get_data_filepath('simplext_corpus_all_fixed', 'valid', 'complex'),
-            [get_data_filepath('simplext_corpus_all_fixed', 'valid', 'simple')],
+            [get_data_filepath('simplext_corpus_all_fixed',
+                               'valid', 'simple')],
         ),
         ('simpitiki', 'test'): (
             'it',
@@ -302,7 +317,8 @@ def get_all_baseline_rows():
     }
     rows = []
     for (dataset, phase), (language, orig_sents_path, refs_sents_paths) in tqdm(paths.items()):
-        dataset_rows = get_baseline_rows(orig_sents_path, tuple(refs_sents_paths), language)
+        dataset_rows = get_baseline_rows(
+            orig_sents_path, tuple(refs_sents_paths), language)
         for row in dataset_rows:
             row['dataset'] = dataset
             row['phase'] = phase
@@ -331,7 +347,8 @@ def get_baseline_rows(orig_sents_path, refs_sents_paths, language):
     scores = evaluate_system_output(
         'custom',
         sys_sents_path=apply_line_function_to_file(
-            lambda sentence: truncate(sentence, truncate_prop=0.2, language=language), orig_sents_path
+            lambda sentence: truncate(
+                sentence, truncate_prop=0.2, language=language), orig_sents_path
         ),
         orig_sents_path=orig_sents_path,
         refs_sents_paths=refs_sents_paths,
@@ -350,7 +367,8 @@ def get_baseline_rows(orig_sents_path, refs_sents_paths, language):
                 'custom',
                 sys_sents_path=refs_sents_paths[i],
                 orig_sents_path=orig_sents_path,
-                refs_sents_paths=[refs_sents_paths[i - 1]] + refs_sents_paths[:i] + refs_sents_paths[i + 1 :],
+                refs_sents_paths=[refs_sents_paths[i - 1]] +
+                refs_sents_paths[:i] + refs_sents_paths[i + 1:],
                 metrics=['sari', 'bleu', 'fkgl', 'sari_by_operation'],
                 quality_estimation=False,
             )
@@ -381,7 +399,8 @@ def get_score_rows(exp_dir, kwargs, additional_fields=None):
     rows = []
     language = get_language_from_dataset(kwargs['dataset'])
     for pred_path in exp_dir.glob('finetune_*.pred'):
-        dataset, phase = re.match(r'finetune_.+?_valid-test_(.+)_(.+?).pred', pred_path.name).groups()
+        dataset, phase = re.match(
+            r'finetune_.+?_valid-test_(.+)_(.+?).pred', pred_path.name).groups()
         scores = get_scores_on_dataset(pred_path, dataset, phase)
         row = {
             'language': language,
