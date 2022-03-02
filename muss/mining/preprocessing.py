@@ -151,7 +151,7 @@ def create_base_index(sentences, index_name, get_embeddings, metric, output_dir)
             index = faiss.index_factory(
                 embeddings.shape[1], index_name, metric)
             embeddings = np.memmap(
-                filename, mode="r", shape=(10**7, embeddings.shape[1]))
+                filename, dtype='float32', mode="r", shape=(10**7, embeddings.shape[1]))
             #embeddings = np.load(filename, mmap_mode="r")
             index.train(embeddings)
         os.remove(filename)
