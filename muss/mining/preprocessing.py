@@ -146,10 +146,10 @@ def create_base_index(sentences, index_name, get_embeddings, metric, output_dir)
 
             #embeddings = get_embeddings(sentences)
         with log_action('Training index'):
-            #embeddings = np.load(filename, mmap_mode="r")
-            embeddings = np.memmap(filename, mode="r")
+            embeddings = np.load(filename, mmap_mode="r")
             index = faiss.index_factory(
                 embeddings.shape[1], index_name, metric)
+            embeddings = np.memmap(filename, mode="r")
             #embeddings = np.load(filename, mmap_mode="r")
             index.train(embeddings)
         os.remove(filename)
