@@ -231,6 +231,11 @@ def get_mbart_kwargs(dataset, language, use_access, use_short_name=False):
             'SentencePiecePreprocessor': {
                 'sentencepiece_model_path': mbart_dir / 'sentence.bpe.model',
                 'tokenize_special_tokens': True,
+                'vocab_size': 32000,
+                'input_filepaths': [
+                    get_data_filepath(dataset, 'train', 'complex'),
+                    get_data_filepath(dataset, 'train', 'simple'),
+                ],
             },
         },
         'preprocess_kwargs': {
