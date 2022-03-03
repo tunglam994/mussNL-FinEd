@@ -218,7 +218,7 @@ with log_action('Computing embeddings'):
             [job.result() for job in tqdm(jobs)]
             done = True
         except:
-            done = False
+            print('Error, restarting..')
 
 # =============================================================================
 #     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
