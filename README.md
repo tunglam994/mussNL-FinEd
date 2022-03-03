@@ -5,7 +5,7 @@ For this reason social instances with a large reach, like governmental instances
 For a person who has a thorough understanding of a language, writing a ‘simple’ sentence can be challenging.
 
 This problem can be solved with the use of deep learning models, where especially the rise of the transformer architecture caused a massive 
-improvement in performance. The problem with deep learning models is the necessity for large quantities of labeled data.
+improvement in performance in natural language processing (NLP). The problem with deep learning models is the necessity for large quantities of labeled data.
 
 This problem is countered in the paper [MUSS: Multilingual Unsupervised Sentence Simplification by Mining Paraphrases](https://github.com/facebookresearch/muss), 
 which, as the name suggests, can train a state of the art text simplification model with unlabelled data. To implement this strategy for 
