@@ -1,7 +1,7 @@
 # Multilingual Unsupervised Sentence Simplification, Dutch Implementation
 
-For people who have cognitive disabilities or are not native speakers of a language, long and complex sentences can be hard to comprehend. 
-For this reason, social instances with a large reach, like governmental instances, have to address people in a simple manner. 
+For people who have cognitive disabilities or are not native speakers of a language long and complex sentences can be hard to comprehend. 
+For this reason social instances with a large reach, like governmental instances, have to address people in a simple manner. 
 For a person who has a thorough understanding of a language, writing a ‘simple’ sentence can be challenging.
 
 This problem can be solved with the use of deep learning models, where especially the rise of the transformer architecture caused a massive 
