@@ -201,20 +201,24 @@ with log_action('Computing embeddings'):
 #     print([job.job_id for job in jobs])
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
-
-    jobs = []
-    with futures.ThreadPoolExecutor(max_workers=12) as executor:
-        for sentences_path in set(query_sentences_paths + db_sentences_paths):
-            if get_index_path(sentences_path, indexes_dir).exists():
-                continue
-            # Should take about 30 minutes each
-            job = executor.submit(
-                compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-            )
-            jobs.append(job)
-    # print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]
-
+    done = False
+    while not done:
+        try:
+            jobs = []
+            with futures.ThreadPoolExecutor(max_workers=12) as executor:
+                for sentences_path in set(query_sentences_paths + db_sentences_paths):
+                    if get_index_path(sentences_path, indexes_dir).exists():
+                        continue
+                    # Should take about 30 minutes each
+                    job = executor.submit(
+                        compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+                    )
+                    jobs.append(job)
+            # print([job.job_id for job in jobs])
+            [job.result() for job in tqdm(jobs)]
+            done = True
+        except:
+            done = False
 
 # =============================================================================
 #     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
