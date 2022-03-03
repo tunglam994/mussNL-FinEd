@@ -36,22 +36,29 @@ def get_laser_embeddings(
 
     def encode_file(input_filepath, output_filepath, language, bpe_codes_path):
         tokenized_filepath = get_temp_filepath()
-        Token(str(input_filepath), str(tokenized_filepath), lang=language, romanize=True if language == 'el' else False)
-        BPEfastApply(str(tokenized_filepath), str(output_filepath), str(bpe_codes_path))
+        Token(str(input_filepath), str(tokenized_filepath),
+              lang=language, romanize=True if language == 'el' else False)
+        BPEfastApply(str(tokenized_filepath), str(
+            output_filepath), str(bpe_codes_path))
         tokenized_filepath.unlink()
 
     input_filepath = get_temp_filepath()
     write_lines(sentences, input_filepath)
     with mute():
         with log_action('Tokenizing and applying BPE'):
-            parallel_file_encoder = get_parallel_file_preprocessor(
-                lambda input_filepath, output_filepath: encode_file(
-                    input_filepath, output_filepath, language, bpe_codes_path
-                ),
-                n_jobs=n_encoding_jobs,
-            )
+            # =============================================================================
+            #             parallel_file_encoder = get_parallel_file_preprocessor(
+            #                 lambda input_filepath, output_filepath: encode_file(
+            #                     input_filepath, output_filepath, language, bpe_codes_path
+            #                 ),
+            #                 n_jobs=n_encoding_jobs,
+            #             )
+            # =============================================================================
             bpe_filepath = get_temp_filepath()
-            parallel_file_encoder(input_filepath, bpe_filepath)
+            #parallel_file_encoder(input_filepath, bpe_filepath)
+
+            encode_file(input_filepath, bpe_filepath, language, bpe_codes_path)
+
         with log_action('Geting LASER embedding'):
             encoder = get_laser_encoder(encoder_path, max_tokens=max_tokens)
             embeddings = encoder.encode_sentences(read_lines(bpe_filepath))
@@ -60,5 +67,6 @@ def get_laser_embeddings(
             assert embeddings.shape[0] == len(sentences)
     del encoder
     if normalize_l2:
-        embeddings = embeddings / np.expand_dims(np.linalg.norm(embeddings, axis=1), axis=1)
+        embeddings = embeddings / \
+            np.expand_dims(np.linalg.norm(embeddings, axis=1), axis=1)
     return embeddings
