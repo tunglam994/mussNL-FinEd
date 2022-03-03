@@ -205,7 +205,7 @@ with log_action('Computing embeddings'):
     while not done:
         try:
             jobs = []
-            with futures.ThreadPoolExecutor(max_workers=6) as executor:
+            with futures.ThreadPoolExecutor(max_workers=12) as executor:
                 for sentences_path in set(query_sentences_paths + db_sentences_paths):
                     if get_index_path(sentences_path, indexes_dir).exists():
                         continue
