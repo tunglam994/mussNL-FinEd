@@ -7,6 +7,7 @@
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
+import gc
 
 import faiss
 import numpy as np
@@ -99,6 +100,8 @@ def compute_and_save_embeddings(sentences_path, base_index_path, get_embeddings,
             index = load_index(base_index_path)
             index.add(embeddings)
             faiss.write_index(index, str(index_path))
+            del embeddings, sentences
+            gc.collect()
     return index_path
 
 

@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import numpy as np
+import gc
 
 from muss.resources.paths import LASER_DIR
 from muss.preprocessing import get_parallel_file_preprocessor
@@ -66,6 +67,7 @@ def get_laser_embeddings(
             bpe_filepath.unlink()
             assert embeddings.shape[0] == len(sentences)
     del encoder
+    gc.collect()
     if normalize_l2:
         embeddings = embeddings / \
             np.expand_dims(np.linalg.norm(embeddings, axis=1), axis=1)
