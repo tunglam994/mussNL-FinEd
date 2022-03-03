@@ -202,27 +202,27 @@ with log_action('Computing embeddings'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    jobs = []
-    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for sentences_path in set(query_sentences_paths + db_sentences_paths):
-            if get_index_path(sentences_path, indexes_dir).exists():
-                continue
-            # Should take about 30 minutes each
-            job = executor.submit(
-                compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-            )
-            jobs.append(job)
-    # print([job.job_id for job in jobs])
-    [job.result() for job in tqdm(jobs)]
+# =============================================================================
+#     jobs = []
+#     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+#         for sentences_path in set(query_sentences_paths + db_sentences_paths):
+#             if get_index_path(sentences_path, indexes_dir).exists():
+#                 continue
+#             # Should take about 30 minutes each
+#             job = executor.submit(
+#                 compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+#             )
+#             jobs.append(job)
+#     # print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
+# =============================================================================
 
 
-# =============================================================================
-#     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
-#         if get_index_path(sentences_path, indexes_dir).exists():
-#             continue
-#         compute_and_save_embeddings(
-#             sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
-# =============================================================================
+    for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
+        if get_index_path(sentences_path, indexes_dir).exists():
+            continue
+        compute_and_save_embeddings(
+            sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
 
 # Mine the paraphrases
 with log_action('Mining paraphrases'):
