@@ -100,7 +100,7 @@ def compute_and_save_embeddings(sentences_path, base_index_path, get_embeddings,
             index = load_index(base_index_path)
             index.add(embeddings)
             faiss.write_index(index, str(index_path))
-            del embeddings, sentences
+            del embeddings, sentences, index
             gc.collect()
     return index_path
 
