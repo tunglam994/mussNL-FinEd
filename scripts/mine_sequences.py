@@ -6,6 +6,7 @@
 
 from pathlib import Path
 from concurrent import futures
+import gc
 
 
 import faiss
@@ -216,10 +217,12 @@ with log_action('Computing embeddings'):
             if len(futures_notdone) >= MAX_WORKERS:
                 done, futures_notdone = futures.wait(
                     futures_notdone, return_when=futures.FIRST_COMPLETED)
-                futures_done.update(done)
+                # futures_done.update(done)
+            del done
+            gc.collect()
 
-        for future in tqdm(futures_done):
-            future.result()
+        # for future in tqdm(futures_done):
+            # future.result()
             # Should take about 30 minutes each
             # job = executor.submit(
             #    compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
