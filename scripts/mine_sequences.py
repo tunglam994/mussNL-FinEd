@@ -201,24 +201,33 @@ with log_action('Computing embeddings'):
 #     print([job.job_id for job in jobs])
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
-    done = False
-    while not done:
-        try:
-            jobs = []
-            with futures.ThreadPoolExecutor(max_workers=12) as executor:
-                for sentences_path in set(query_sentences_paths + db_sentences_paths):
-                    if get_index_path(sentences_path, indexes_dir).exists():
-                        continue
-                    # Should take about 30 minutes each
-                    job = executor.submit(
-                        compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-                    )
-                    jobs.append(job)
-            # print([job.job_id for job in jobs])
-            [job.result() for job in tqdm(jobs)]
-            done = True
-        except:
-            print('Error, restarting..')
+    MAX_WORKERS = 12
+    #jobs = []
+    with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures_done = set()
+        futures_notdone = set()
+        for sentences_path in set(query_sentences_paths + db_sentences_paths):
+            if get_index_path(sentences_path, indexes_dir).exists():
+                continue
+            futures_notdone.add(executor.submit(
+                compute_and_save_embeddings, sentences_path, base_index_path,
+                get_embeddings, indexes_dir=indexes_dir))
+
+            if len(futures_notdone) >= MAX_WORKERS:
+                done, futures_notdone = futures.wait(
+                    futures_notdone, return_when=futures.FIRST_COMPLETED)
+                futures_done.update(done)
+
+        for future in tqdm(futures_done):
+            future.result()
+            # Should take about 30 minutes each
+            # job = executor.submit(
+            #    compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+            # )
+            # jobs.append(job)
+    # print([job.job_id for job in jobs])
+    #[job.result() for job in tqdm(jobs)]
+
 
 # =============================================================================
 #     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
