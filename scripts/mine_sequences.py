@@ -204,7 +204,7 @@ with log_action('Computing embeddings'):
 # =============================================================================
     MAX_WORKERS = 12
     #jobs = []
-    with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    with futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures_done = set()
         futures_notdone = set()
         for sentences_path in set(query_sentences_paths + db_sentences_paths):
