@@ -221,13 +221,16 @@ with log_action('Computing embeddings'):
                 del done
                 gc.collect()
 
+        done, futures_notdone = futures.wait(
+            futures_notdone, return_when=futures.ALL_COMPLETED)
+
         # for future in tqdm(futures_done):
-            # future.result()
-            # Should take about 30 minutes each
-            # job = executor.submit(
-            #    compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-            # )
-            # jobs.append(job)
+        # future.result()
+        # Should take about 30 minutes each
+        # job = executor.submit(
+        #    compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
+        # )
+        # jobs.append(job)
     # print([job.job_id for job in jobs])
     #[job.result() for job in tqdm(jobs)]
 
