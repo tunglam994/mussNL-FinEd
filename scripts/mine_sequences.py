@@ -218,8 +218,8 @@ with log_action('Computing embeddings'):
                 done, futures_notdone = futures.wait(
                     futures_notdone, return_when=futures.FIRST_COMPLETED)
                 # futures_done.update(done)
-            del done
-            gc.collect()
+                del done
+                gc.collect()
 
         # for future in tqdm(futures_done):
             # future.result()
