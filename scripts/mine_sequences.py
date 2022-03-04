@@ -209,7 +209,7 @@ with log_action('Computing embeddings'):
 # =============================================================================
 
     iteration = 0
-    for sentence_path_chunk in chunker(set(query_sentences_paths + db_sentences_paths), 60):
+    for sentence_path_chunk in chunker(list(set(query_sentences_paths + db_sentences_paths)), 60):
         gc.collect()
         iteration += 1
         n_processed_high = iteration*60
