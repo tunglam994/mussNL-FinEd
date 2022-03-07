@@ -8,6 +8,7 @@ from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 import gc
+import time
 
 import faiss
 import numpy as np
@@ -114,18 +115,26 @@ def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=102
         else:
             raise e
     if use_gpu:
+        t = time.time()
         db_index = faiss.index_cpu_to_all_gpus(db_index)
+        print(f'Time spent setting cpu to gpu index: {time.time() - t}')
+    t = time.time()
     all_distances = np.empty((query_index.ntotal, topk))
     all_sentence_ids = np.empty((query_index.ntotal, topk), dtype=int)
+    print(f'Time spent loading empty matrices: {time.time() - t}')
+    t = time.time()
     for batch_idx in range((query_index.ntotal // batch_size) + 1):
         start_idx = batch_idx * batch_size
         end_idx = min(start_idx + batch_size, query_index.ntotal)
         actual_batch_size = end_idx - start_idx
         query_embeddings = query_index.reconstruct_n(
             start_idx, actual_batch_size)  # TODO: Do this in the background
+        t2 = time.time()
         distances, sentence_ids = db_index.search(query_embeddings, topk)
+        print(f'Time spent searching one batch on gpu: {time.time() - t2}')
         all_distances[start_idx:end_idx] = distances
         all_sentence_ids[start_idx:end_idx] = sentence_ids
+    print(f'Time spent searching indexes: {time.time() - t}')
     # If distances are sorted in descending order, we make them ascending instead for the following code to work
     if np.all(np.diff(all_distances) <= 0):
         # This is taylored for transforming cosine similarity into a pseudo-distance: the maximum cosine similarity is 1 (vectors are equal).
@@ -157,9 +166,13 @@ def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, 
         query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
     if results_path.exists():
         return results_path
+    t = time.time()
     query_index = load_index(get_index_path(query_sentences_path, indexes_dir))
+    print(f'Time spent loading query index: {time.time() - t}')
+    t = time.time()
     db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
                             for sentences_path in db_sentences_paths])
+    print(f'Time spent loading sentences: {time.time() - t}')
     distances, sentence_ids = get_nearest_sentence_ids(
         query_index, db_index, topk, nprobe)
     dump_results(distances, sentence_ids, results_path)

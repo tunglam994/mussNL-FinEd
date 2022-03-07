@@ -187,56 +187,38 @@ with log_action('Computing embeddings'):
     indexes_dir.mkdir(exist_ok=True, parents=True)
     db_sentences_paths = get_sentences_paths(dataset_dir)
     query_sentences_paths = db_sentences_paths
+
 # =============================================================================
-#     executor = get_executor(
-#         cluster=cluster,
-#         slurm_partition=slurm_partition,
-#         timeout_min=2 * 60,
-#         slurm_array_parallelism=slurm_array_parallelism,
-#     )
-#     jobs = []
-#     with executor.batch():
-#         for sentences_path in set(query_sentences_paths + db_sentences_paths):
-#             if get_index_path(sentences_path, indexes_dir).exists():
-#                 continue
-#             # Should take about 30 minutes each
-#             job = executor.submit(
-#                 compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-#             )
-#             jobs.append(job)
-#     print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]
+#     iteration = 0
+#     for sentence_path_chunk in chunker(list(set(query_sentences_paths + db_sentences_paths)), 60):
+#         gc.collect()
+#         iteration += 1
+#         n_processed_high = iteration*60
+#         n_processed_low = n_processed_high - 60
+#         print(
+#             f'Chunk number: {iteration}, processing file numbers {n_processed_low} - {n_processed_high}')
+#         MAX_WORKERS = 12
+#         with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+#             futures_done = set()
+#             futures_notdone = set()
+#             for sentences_path in sentence_path_chunk:
+#                 if get_index_path(sentences_path, indexes_dir).exists():
+#                     continue
+#                 futures_notdone.add(executor.submit(
+#                     compute_and_save_embeddings, sentences_path, base_index_path,
+#                     get_embeddings, indexes_dir=indexes_dir))
+#
+#                 if len(futures_notdone) >= MAX_WORKERS:
+#                     done, futures_notdone = futures.wait(
+#                         futures_notdone, return_when=futures.FIRST_COMPLETED)
+#                     # futures_done.update(done)
+#                     del done
+#                     gc.collect()
+#
+#             done, futures_notdone = futures.wait(
+#                 futures_notdone, return_when=futures.ALL_COMPLETED)
+#             del done, futures_notdone
 # =============================================================================
-
-    iteration = 0
-    for sentence_path_chunk in chunker(list(set(query_sentences_paths + db_sentences_paths)), 60):
-        gc.collect()
-        iteration += 1
-        n_processed_high = iteration*60
-        n_processed_low = n_processed_high - 60
-        print(
-            f'Chunk number: {iteration}, processing file numbers {n_processed_low} - {n_processed_high}')
-        MAX_WORKERS = 12
-        with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            futures_done = set()
-            futures_notdone = set()
-            for sentences_path in sentence_path_chunk:
-                if get_index_path(sentences_path, indexes_dir).exists():
-                    continue
-                futures_notdone.add(executor.submit(
-                    compute_and_save_embeddings, sentences_path, base_index_path,
-                    get_embeddings, indexes_dir=indexes_dir))
-
-                if len(futures_notdone) >= MAX_WORKERS:
-                    done, futures_notdone = futures.wait(
-                        futures_notdone, return_when=futures.FIRST_COMPLETED)
-                    # futures_done.update(done)
-                    del done
-                    gc.collect()
-
-            done, futures_notdone = futures.wait(
-                futures_notdone, return_when=futures.ALL_COMPLETED)
-            del done, futures_notdone
 
 # =============================================================================
 #     MAX_WORKERS = 12
@@ -262,24 +244,6 @@ with log_action('Computing embeddings'):
 #             futures_notdone, return_when=futures.ALL_COMPLETED)
 # =============================================================================
 
-    # for future in tqdm(futures_done):
-    # future.result()
-    # Should take about 30 minutes each
-    # job = executor.submit(
-    #    compute_and_save_embeddings, sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir
-    # )
-    # jobs.append(job)
-    # print([job.job_id for job in jobs])
-    #[job.result() for job in tqdm(jobs)]
-
-
-# =============================================================================
-#     for sentences_path in tqdm(set(query_sentences_paths + db_sentences_paths)):
-#         if get_index_path(sentences_path, indexes_dir).exists():
-#             continue
-#         compute_and_save_embeddings(
-#             sentences_path, base_index_path, get_embeddings, indexes_dir=indexes_dir)
-# =============================================================================
 
 # Mine the paraphrases
 with log_action('Mining paraphrases'):
