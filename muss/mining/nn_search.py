@@ -106,7 +106,7 @@ def compute_and_save_embeddings(sentences_path, base_index_path, get_embeddings,
     return index_path
 
 
-def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=1024, use_gpu=True):
+def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, lock, batch_size=1024, use_gpu=True):
     try:
         faiss.ParameterSpace().set_index_parameter(db_index, 'nprobe', nprobe)
     except RuntimeError as e:
@@ -130,7 +130,8 @@ def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=102
         query_embeddings = query_index.reconstruct_n(
             start_idx, actual_batch_size)  # TODO: Do this in the background
         t2 = time.time()
-        distances, sentence_ids = db_index.search(query_embeddings, topk)
+        with lock:
+            distances, sentence_ids = db_index.search(query_embeddings, topk)
         print(f'Time spent searching one batch on gpu: {time.time() - t2}')
         all_distances[start_idx:end_idx] = distances
         all_sentence_ids[start_idx:end_idx] = sentence_ids
@@ -161,7 +162,7 @@ def load_results(results_path):
         raise
 
 
-def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir):
+def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir, lock):
     results_path = get_results_path(
         query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
     if results_path.exists():
@@ -174,7 +175,7 @@ def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, 
                             for sentences_path in db_sentences_paths])
     print(f'Time spent loading sentences: {time.time() - t}')
     distances, sentence_ids = get_nearest_sentence_ids(
-        query_index, db_index, topk, nprobe)
+        query_index, db_index, topk, nprobe, lock)
     dump_results(distances, sentence_ids, results_path)
     return results_path
 
@@ -212,8 +213,9 @@ def compute_and_save_nn_batched(
     nprobe,
     indexes_dir,
     nn_search_results_dir,
+    lock,
     n_samples_per_gpu=1e7,
-    delete_intermediary=True,
+    delete_intermediary=True
 ):
     combined_results_path = get_results_path(
         query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir
@@ -238,8 +240,8 @@ def compute_and_save_nn_batched(
     offsets = []
     for db_sentences_paths_batch in tqdm(db_sentences_paths_batches, desc='Compute NN db batches'):
         intermediary_results_path = compute_and_save_nn(
-            query_sentences_path, db_sentences_paths_batch, topk, nprobe, indexes_dir, nn_search_results_dir
-        )
+            query_sentences_path, db_sentences_paths_batch, topk, nprobe, indexes_dir,
+            nn_search_results_dir, lock)
         intermediary_results_paths.append(intermediary_results_path)
         offsets.append(offset)
         offset += sum([cached_count_lines(sentences_path)
