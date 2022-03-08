@@ -218,11 +218,11 @@ def compute_and_save_nn_batched(
         nn_search_results_dir,
         n_samples_per_gpu=1e7,
         delete_intermediary=True):
-    # combined_results_path = get_results_path(
-    #    query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir
-    # )
+
+    # combined_results_path = get_results_path(query_sentences_path,
+    #                                         db_sentences_paths, topk, nprobe, nn_search_results_dir)
     # if combined_results_path.exists():
-    #    return combined_results_path
+    #   return combined_results_path
 
     db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
                             for sentences_path in db_sentences_paths_batch])
@@ -358,10 +358,10 @@ def find_nearest_neighbors(
     # Run NN search query file by query file
     nn_search_results_dir = cache_dir / 'nn_search_results'
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
-    for query_sentences_path in query_sentences_paths:
-        compute_and_save_nn_batched(
-            query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir
-        )
+    # for query_sentences_path in query_sentences_paths:
+    #    compute_and_save_nn_batched(
+    #        query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir
+    #    )
     # Retrieve sentences
     distances, sentence_ids = combine_results_over_queries(
         query_sentences_paths, db_sentences_paths, topk, nprobe, nn_search_results_dir
