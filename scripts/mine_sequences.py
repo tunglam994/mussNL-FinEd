@@ -295,12 +295,11 @@ with log_action('Mining paraphrases'):
                                         desc='Combining queries'):
 
         intermediary_results_paths = [result[i]
-            for result in intermediary_results_paths_total]
+                                      for result in intermediary_results_paths_total]
 
         calculate_distances(query_sentences_path, db_sentences_paths,
-                                intermediary_results_paths, offsets, topk,
-                                nprobe, nn_search_results_dir
-
+                            intermediary_results_paths, offsets, topk,
+                            nprobe, nn_search_results_dir)
 
 
 # =============================================================================
@@ -351,18 +350,18 @@ with log_action('Mining paraphrases'):
 
 # Filter candidate paraphrases
 with log_action('Filtering candidate paraphrases'):
-    pairs_dir=cache_dir / 'pairs'
+    pairs_dir = cache_dir / 'pairs'
     pairs_dir.mkdir(exist_ok=True, parents=True)
-    filter_kwargs={
+    filter_kwargs = {
         'density': 0.6,
         'distance': 0.05,
         'levenshtein': 0.2,
         'simplicity': 0.0,
         'filter_ne': False,
     }  # Best for paraphrases
-    jobs=[]
-    paraphrase_pairs=[]
-    i=0
+    jobs = []
+    paraphrase_pairs = []
+    i = 0
     def is_simpler(pair): return True  # noqa: E731
     # Only used when mining simplifications
     if filter_kwargs.get('simplicity', 0) > 0:
@@ -380,10 +379,10 @@ with log_action('Filtering candidate paraphrases'):
                 )
             )
             i += 1
-        simplicity_scorer=SimplicityScorer(language=language)
+        simplicity_scorer = SimplicityScorer(language=language)
         simplicity_scorer.fit(paraphrase_pairs)
         def is_simpler(pair): return simplicity_scorer.score(*pair) > filter_kwargs['simplicity']  # noqa: E731
-    executor=get_executor(
+    executor = get_executor(
         cluster=cluster,
         slurm_partition=slurm_partition,
         timeout_min=2 * 60,
@@ -417,16 +416,16 @@ with log_action('Filtering candidate paraphrases'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    jobs=[]
+    jobs = []
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-            simplification_pairs_path=get_pairs_path(
+            simplification_pairs_path = get_pairs_path(
                 query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
             )
             if simplification_pairs_path.exists():
                 continue
             # Should take about 30 minutes each
-            job=executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
+            job = executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
                                   db_sentences_paths=db_sentences_paths,
                                   base_index_path=base_index_path,
                                   cache_dir=cache_dir,
@@ -464,10 +463,10 @@ with log_action('Filtering candidate paraphrases'):
 # =============================================================================
 
 with log_action('Wrapping up paraphrases'):
-    simplification_pairs=get_simplification_pairs_paths(
+    simplification_pairs = get_simplification_pairs_paths(
         query_sentences_paths, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
     )
-    results_str=f'query-{get_files_hash(query_sentences_paths)}_db-{get_files_hash(db_sentences_paths)}_topk-{topk}_nprobe-{nprobe}'
-    filter_str=get_filter_string_representation(filter_kwargs)
-    dataset=f'uts_{language}_{results_str}_{filter_str}'
+    results_str = f'query-{get_files_hash(query_sentences_paths)}_db-{get_files_hash(db_sentences_paths)}_topk-{topk}_nprobe-{nprobe}'
+    filter_str = get_filter_string_representation(filter_kwargs)
+    dataset = f'uts_{language}_{results_str}_{filter_str}'
     print(combine_simplifications_in_dataset(simplification_pairs, dataset))
