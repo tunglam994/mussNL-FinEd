@@ -417,43 +417,42 @@ with log_action('Filtering candidate paraphrases'):
 #     print([job.job_id for job in jobs])
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
-# =============================================================================
-#     MAX_WORKERS = 2
-#     jobs = []
-#     with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-#         gc.collect()
-#         futures_notdone = set()
-#         futures_done = set()
-#         for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-#             simplification_pairs_path = get_pairs_path(
-#                 query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
-#             )
-#             if simplification_pairs_path.exists():
-#                 continue
-#
-#             futures_notdone.add(executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
-#                                                 db_sentences_paths=db_sentences_paths,
-#                                                 base_index_path=base_index_path,
-#                                                 cache_dir=cache_dir,
-#                                                 pairs_dir=pairs_dir,
-#                                                 get_embeddings=get_embeddings,
-#                                                 topk=topk,
-#                                                 nprobe=nprobe,
-#                                                 language=language,
-#                                                 filter_kwargs=filter_kwargs,
-#                                                 is_simpler=is_simpler))
-#
-#             if len(futures_notdone) >= MAX_WORKERS:
-#                 done, futures_notdone = futures.wait(
-#                     futures_notdone, return_when=futures.FIRST_COMPLETED)
-#                 # futures_done.update(done)
-#                 del done
-#                 gc.collect()
-#
-#         done, futures_notdone = futures.wait(
-#             futures_notdone, return_when=futures.ALL_COMPLETED)
-#         del done, futures_notdone
-# =============================================================================
+
+    MAX_WORKERS = 6
+    jobs = []
+    with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        gc.collect()
+        futures_notdone = set()
+        futures_done = set()
+        for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
+            simplification_pairs_path = get_pairs_path(
+                query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
+            )
+            if simplification_pairs_path.exists():
+                continue
+
+            futures_notdone.add(executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
+                                                db_sentences_paths=db_sentences_paths,
+                                                base_index_path=base_index_path,
+                                                cache_dir=cache_dir,
+                                                pairs_dir=pairs_dir,
+                                                get_embeddings=get_embeddings,
+                                                topk=topk,
+                                                nprobe=nprobe,
+                                                language=language,
+                                                filter_kwargs=filter_kwargs,
+                                                is_simpler=is_simpler))
+
+            if len(futures_notdone) >= MAX_WORKERS:
+                done, futures_notdone = futures.wait(
+                    futures_notdone, return_when=futures.FIRST_COMPLETED)
+                # futures_done.update(done)
+                del done
+                gc.collect()
+
+        done, futures_notdone = futures.wait(
+            futures_notdone, return_when=futures.ALL_COMPLETED)
+        del done, futures_notdone
 
 # =============================================================================
 #             # Should take about 30 minutes each
@@ -473,24 +472,26 @@ with log_action('Filtering candidate paraphrases'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-        simplification_pairs_path = get_pairs_path(
-            query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
-        )
-        if simplification_pairs_path.exists():
-            continue
-
-        compute_and_save_simplification_pairs(query_sentences_path=query_sentences_path,
-                                              db_sentences_paths=db_sentences_paths,
-                                              base_index_path=base_index_path,
-                                              cache_dir=cache_dir,
-                                              pairs_dir=pairs_dir,
-                                              get_embeddings=get_embeddings,
-                                              topk=topk,
-                                              nprobe=nprobe,
-                                              language=language,
-                                              filter_kwargs=filter_kwargs,
-                                              is_simpler=is_simpler)
+# =============================================================================
+#     for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
+#         simplification_pairs_path = get_pairs_path(
+#             query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
+#         )
+#         if simplification_pairs_path.exists():
+#             continue
+#
+#         compute_and_save_simplification_pairs(query_sentences_path=query_sentences_path,
+#                                               db_sentences_paths=db_sentences_paths,
+#                                               base_index_path=base_index_path,
+#                                               cache_dir=cache_dir,
+#                                               pairs_dir=pairs_dir,
+#                                               get_embeddings=get_embeddings,
+#                                               topk=topk,
+#                                               nprobe=nprobe,
+#                                               language=language,
+#                                               filter_kwargs=filter_kwargs,
+#                                               is_simpler=is_simpler)
+# =============================================================================
 
 
 with log_action('Wrapping up paraphrases'):
