@@ -260,48 +260,46 @@ with log_action('Mining paraphrases'):
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
     topk = 8
     nprobe = 16
-    n_samples_per_gpu = 3*10**6  # 1e7
+    n_samples_per_gpu = 1e7
 
-# =============================================================================
-#     # Batch db paths to fit on one GPU
-#     db_sentences_paths_batches = []
-#     batch = []
-#     n_batch_samples = 0
-#     for db_sentences_path in tqdm(db_sentences_paths, desc='Batching db files'):
-#         n_samples = cached_count_lines(db_sentences_path)
-#         if n_batch_samples + n_samples > n_samples_per_gpu:
-#             db_sentences_paths_batches.append(batch)
-#             batch = []
-#             n_batch_samples = 0
-#         batch.append(db_sentences_path)
-#         n_batch_samples += n_samples
-#     db_sentences_paths_batches.append(batch)
-#
-#     # lock = multiprocessing.Lock()
-#
-#     intermediary_results_paths_total = []
-#     offset = 0
-#     offsets = []
-#     for db_sentences_paths_batch in tqdm(db_sentences_paths_batches, desc='Compute NN db batches'):
-#         intermediary_results_paths = compute_and_save_nn_batched(query_sentences_paths,
-#                                                                  db_sentences_paths_batch,
-#                                                                  topk, nprobe, indexes_dir, nn_search_results_dir,
-#                                                                  delete_intermediary=True)
-#         intermediary_results_paths_total.append(intermediary_results_paths)
-#         offsets.append(offset)
-#         offset += sum([cached_count_lines(sentences_path)
-#                       for sentences_path in db_sentences_paths_batch])
-#
-#     for i, query_sentences_path in tqdm(enumerate(query_sentences_paths),
-#                                         desc='Combining queries'):
-#
-#         intermediary_results_paths = [result[i]
-#                                       for result in intermediary_results_paths_total]
-#
-#         calculate_distances(query_sentences_path, db_sentences_paths,
-#                             intermediary_results_paths, offsets, topk,
-#                             nprobe, nn_search_results_dir)
-# =============================================================================
+    # Batch db paths to fit on one GPU
+    db_sentences_paths_batches = []
+    batch = []
+    n_batch_samples = 0
+    for db_sentences_path in tqdm(db_sentences_paths, desc='Batching db files'):
+        n_samples = cached_count_lines(db_sentences_path)
+        if n_batch_samples + n_samples > n_samples_per_gpu:
+            db_sentences_paths_batches.append(batch)
+            batch = []
+            n_batch_samples = 0
+        batch.append(db_sentences_path)
+        n_batch_samples += n_samples
+    db_sentences_paths_batches.append(batch)
+
+    # lock = multiprocessing.Lock()
+
+    intermediary_results_paths_total = []
+    offset = 0
+    offsets = []
+    for db_sentences_paths_batch in tqdm(db_sentences_paths_batches, desc='Compute NN db batches'):
+        intermediary_results_paths = compute_and_save_nn_batched(query_sentences_paths,
+                                                                 db_sentences_paths_batch,
+                                                                 topk, nprobe, indexes_dir, nn_search_results_dir,
+                                                                 delete_intermediary=True)
+        intermediary_results_paths_total.append(intermediary_results_paths)
+        offsets.append(offset)
+        offset += sum([cached_count_lines(sentences_path)
+                      for sentences_path in db_sentences_paths_batch])
+
+    for i, query_sentences_path in tqdm(enumerate(query_sentences_paths),
+                                        desc='Combining queries'):
+
+        intermediary_results_paths = [result[i]
+                                      for result in intermediary_results_paths_total]
+
+        calculate_distances(query_sentences_path, db_sentences_paths,
+                            intermediary_results_paths, offsets, topk,
+                            nprobe, nn_search_results_dir)
 
 
 # =============================================================================
@@ -384,39 +382,6 @@ with log_action('Filtering candidate paraphrases'):
         simplicity_scorer = SimplicityScorer(language=language)
         simplicity_scorer.fit(paraphrase_pairs)
         def is_simpler(pair): return simplicity_scorer.score(*pair) > filter_kwargs['simplicity']  # noqa: E731
-    executor = get_executor(
-        cluster=cluster,
-        slurm_partition=slurm_partition,
-        timeout_min=2 * 60,
-        slurm_array_parallelism=slurm_array_parallelism,
-    )
-# =============================================================================
-#     with executor.batch():
-#         for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-#             simplification_pairs_path = get_pairs_path(
-#                 query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
-#             )
-#             if simplification_pairs_path.exists():
-#                 continue
-#             # Should take ~10 minutes
-#             job = executor.submit(
-#                 compute_and_save_simplification_pairs,
-#                 query_sentences_path=query_sentences_path,
-#                 db_sentences_paths=db_sentences_paths,
-#                 base_index_path=base_index_path,
-#                 cache_dir=cache_dir,
-#                 pairs_dir=pairs_dir,
-#                 get_embeddings=get_embeddings,
-#                 topk=topk,
-#                 nprobe=nprobe,
-#                 language=language,
-#                 filter_kwargs=filter_kwargs,
-#                 is_simpler=is_simpler,
-#             )
-#             jobs.append(job)
-#     print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]
-# =============================================================================
 
     MAX_WORKERS = 6
     jobs = []
@@ -454,23 +419,6 @@ with log_action('Filtering candidate paraphrases'):
             futures_notdone, return_when=futures.ALL_COMPLETED)
         del done, futures_notdone
 
-# =============================================================================
-#             # Should take about 30 minutes each
-#             job = executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
-#                                   db_sentences_paths=db_sentences_paths,
-#                                   base_index_path=base_index_path,
-#                                   cache_dir=cache_dir,
-#                                   pairs_dir=pairs_dir,
-#                                   get_embeddings=get_embeddings,
-#                                   topk=topk,
-#                                   nprobe=nprobe,
-#                                   language=language,
-#                                   filter_kwargs=filter_kwargs,
-#                                   is_simpler=is_simpler)
-#             jobs.append(job)
-#     # print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]
-# =============================================================================
 
 # =============================================================================
 #     for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
