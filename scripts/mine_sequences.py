@@ -254,15 +254,15 @@ with log_action('Computing embeddings'):
 # =============================================================================
 
 
+# Mine the paraphrases
+with log_action('Mining paraphrases'):
+    nn_search_results_dir = cache_dir / 'nn_search_results'
+    nn_search_results_dir.mkdir(exist_ok=True, parents=True)
+    topk = 8
+    nprobe = 16
+    n_samples_per_gpu = 3*10**6  # 1e7
+
 # =============================================================================
-# # Mine the paraphrases
-# with log_action('Mining paraphrases'):
-#     nn_search_results_dir = cache_dir / 'nn_search_results'
-#     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
-#     topk = 8
-#     nprobe = 16
-#     n_samples_per_gpu = 3*10**6  # 1e7
-#
 #     # Batch db paths to fit on one GPU
 #     db_sentences_paths_batches = []
 #     batch = []
