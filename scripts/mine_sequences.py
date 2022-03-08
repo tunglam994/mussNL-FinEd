@@ -260,7 +260,7 @@ with log_action('Mining paraphrases'):
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
     topk = 8
     nprobe = 16
-    n_samples_per_gpu = 5*10**5  # 1e7
+    n_samples_per_gpu = 3*10**6  # 1e7
 
     # Batch db paths to fit on one GPU
     db_sentences_paths_batches = []
