@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  7 17:48:00 2022
-
-@author: johan
-"""
+# Copyright (c) Facebook, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
 
 from collections import defaultdict
 from functools import lru_cache
@@ -107,7 +106,7 @@ def compute_and_save_embeddings(sentences_path, base_index_path, get_embeddings,
     return index_path
 
 
-def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, batch_size=1024, use_gpu=True):
+def get_nearest_sentence_ids(query_index, db_index, topk, nprobe, lock, batch_size=1024, use_gpu=True):
     try:
         faiss.ParameterSpace().set_index_parameter(db_index, 'nprobe', nprobe)
     except RuntimeError as e:
@@ -164,7 +163,7 @@ def load_results(results_path):
         raise
 
 
-def compute_and_save_nn(query_sentences_path, db_sentences_paths, db_index, topk, nprobe, indexes_dir, nn_search_results_dir):
+def compute_and_save_nn(query_sentences_path, db_sentences_paths, topk, nprobe, indexes_dir, nn_search_results_dir, lock):
     results_path = get_results_path(
         query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir)
     if results_path.exists():
@@ -173,12 +172,12 @@ def compute_and_save_nn(query_sentences_path, db_sentences_paths, db_index, topk
     query_index = load_index(get_index_path(query_sentences_path, indexes_dir))
     print(f'Time spent loading query index: {time.time() - t}')
     t = time.time()
-    # db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
-    #                        for sentences_path in db_sentences_paths])
+    db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
+                            for sentences_path in db_sentences_paths])
     print(f'Time spent loading sentences: {time.time() - t}')
-    # with lock:
-    distances, sentence_ids = get_nearest_sentence_ids(
-        query_index, db_index, topk, nprobe)
+    with lock:
+        distances, sentence_ids = get_nearest_sentence_ids(
+            query_index, db_index, topk, nprobe, lock)
     dump_results(distances, sentence_ids, results_path)
     return results_path
 
@@ -210,50 +209,52 @@ def combine_results_over_db_indexes(intermediary_results_paths, offsets):
 
 
 def compute_and_save_nn_batched(
-        query_sentences_paths,
-        db_sentences_paths_batch,
-        topk,
-        nprobe,
-        indexes_dir,
-        nn_search_results_dir,
-        n_samples_per_gpu=1e7,
-        delete_intermediary=True):
-    # combined_results_path = get_results_path(
-    #    query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir
-    # )
-    # if combined_results_path.exists():
-    #    return combined_results_path
-
-    db_index = load_indexes([get_index_path(sentences_path, indexes_dir)
-                            for sentences_path in db_sentences_paths_batch])
-
-    intermediary_results_paths = []
-
-    for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-        intermediary_results_path = compute_and_save_nn(
-            query_sentences_path, db_sentences_paths_batch, db_index,
-            topk, nprobe, indexes_dir,
-            nn_search_results_dir)
-        intermediary_results_paths.append(intermediary_results_path)
-
-    return intermediary_results_paths
-
-
-def calculate_distances(query_sentences_path, db_sentences_paths,
-                        intermediary_results_paths, offsets, topk,
-                        nprobe, nn_search_results_dir, delete_intermediary=True):
-
+    query_sentences_path,
+    db_sentences_paths,
+    topk,
+    nprobe,
+    indexes_dir,
+    nn_search_results_dir,
+    lock,
+    n_samples_per_gpu=1e7,
+    delete_intermediary=True
+):
     combined_results_path = get_results_path(
-        query_sentences_path, db_sentences_paths, topk, nprobe,
-        nn_search_results_dir)
-
+        query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir
+    )
+    if combined_results_path.exists():
+        return combined_results_path
+    # Batch db paths to fit on one GPU
+    db_sentences_paths_batches = []
+    batch = []
+    n_batch_samples = 0
+    for db_sentences_path in tqdm(db_sentences_paths, desc='Batching db files'):
+        n_samples = cached_count_lines(db_sentences_path)
+        if n_batch_samples + n_samples > n_samples_per_gpu:
+            db_sentences_paths_batches.append(batch)
+            batch = []
+            n_batch_samples = 0
+        batch.append(db_sentences_path)
+        n_batch_samples += n_samples
+    db_sentences_paths_batches.append(batch)
+    intermediary_results_paths = []
+    offset = 0
+    offsets = []
+    for db_sentences_paths_batch in tqdm(db_sentences_paths_batches, desc='Compute NN db batches'):
+        intermediary_results_path = compute_and_save_nn(
+            query_sentences_path, db_sentences_paths_batch, topk, nprobe, indexes_dir,
+            nn_search_results_dir, lock)
+        intermediary_results_paths.append(intermediary_results_path)
+        offsets.append(offset)
+        offset += sum([cached_count_lines(sentences_path)
+                      for sentences_path in db_sentences_paths_batch])
     if len(intermediary_results_paths) == 1:
         assert combined_results_path == intermediary_results_paths[0]
     else:
         # Combine and save final result
         distances, sentence_ids = print_running_time(combine_results_over_db_indexes)(
-            intermediary_results_paths, offsets)
-
+            intermediary_results_paths, offsets
+        )
         dump_results(distances, sentence_ids, combined_results_path)
         # Delete intermediary results
         if delete_intermediary:

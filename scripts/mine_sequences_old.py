@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  7 17:14:04 2022
-
-@author: johan
-"""
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
@@ -45,8 +39,6 @@ from muss.mining.nn_search import (
     get_simplification_pairs_paths,
 )
 from muss.mining.filtering import SimplicityScorer
-
-from muss.mining.nn_search import cached_count_lines, calculate_distances
 
 ccnet_dir = Path(
     input(
@@ -153,7 +145,7 @@ with log_action('Tokenizing sentences'):
             job = executor.submit(sentence_tokenize_subshard,
                                   subshard_path, sentences_path, language)
             jobs.append(job)
-    # print([job.job_id for job in jobs])
+    #print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 embeddings_type_name = f'laser_{language}'
@@ -260,85 +252,59 @@ with log_action('Mining paraphrases'):
     nn_search_results_dir.mkdir(exist_ok=True, parents=True)
     topk = 8
     nprobe = 16
-    n_samples_per_gpu = 5*10**5  # 1e7
-
-    # Batch db paths to fit on one GPU
-    db_sentences_paths_batches = []
-    batch = []
-    n_batch_samples = 0
-    for db_sentences_path in tqdm(db_sentences_paths, desc='Batching db files'):
-        n_samples = cached_count_lines(db_sentences_path)
-        if n_batch_samples + n_samples > n_samples_per_gpu:
-            db_sentences_paths_batches.append(batch)
-            batch = []
-            n_batch_samples = 0
-        batch.append(db_sentences_path)
-        n_batch_samples += n_samples
-    db_sentences_paths_batches.append(batch)
-
-    # lock = multiprocessing.Lock()
-
-    intermediary_results_paths_total = []
-    offset = 0
-    offsets = []
-    for db_sentences_paths_batch in tqdm(db_sentences_paths_batches, desc='Compute NN db batches'):
-        intermediary_results_paths = compute_and_save_nn_batched(query_sentences_paths,
-                                                                 db_sentences_paths_batch,
-                                                                 topk, nprobe, indexes_dir, nn_search_results_dir,
-                                                                 delete_intermediary=True)
-        intermediary_results_paths_total.append(intermediary_results_paths)
-        offsets.append(offset)
-        offset += sum([cached_count_lines(sentences_path)
-                      for sentences_path in db_sentences_paths_batch])
-
-    for i, query_sentences_path in tqdm(enumerate(query_sentences_paths),
-                                        desc='Combining queries'):
-
-        intermediary_results_paths = [result[i]
-            for result in intermediary_results_paths_total]
-
-        calculate_distances(query_sentences_path, db_sentences_paths,
-                                intermediary_results_paths, offsets, topk,
-                                nprobe, nn_search_results_dir
-
-
-
 # =============================================================================
-#     for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-#         if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
-#             continue
-#         compute_and_save_nn_batched(query_sentences_path, db_sentences_paths,
-#                                     topk, nprobe, indexes_dir, nn_search_results_dir, delete_intermediary=True,)
-# =============================================================================
-
-
-# =============================================================================
-#     lock = multiprocessing.Lock()
-#     MAX_WORKERS = 2
-#     #jobs = []
-#     with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-#         futures_done = set()
-#         futures_notdone = set()
+#     executor = get_executor(
+#         cluster=cluster,
+#         slurm_partition=slurm_partition,
+#         timeout_min=2 * 60,
+#         slurm_array_parallelism=slurm_array_parallelism,
+#     )
+#     jobs = []
+#     # Run NN search query file by query file
+#     with executor.batch():
 #         for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
 #             if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
 #                 continue
-#             futures_notdone.add(executor.submit(compute_and_save_nn_batched,
-#                                                 query_sentences_path, db_sentences_paths,
-#                                                 topk, nprobe, indexes_dir,
-#                                                 nn_search_results_dir,
-#                                                 lock,
-#                                                 delete_intermediary=True,))
-#
-#             if len(futures_notdone) >= MAX_WORKERS:
-#                 done, futures_notdone = futures.wait(
-#                     futures_notdone, return_when=futures.FIRST_COMPLETED)
-#                 # futures_done.update(done)
-#                 del done
-#                 gc.collect()
-#
-#         done, futures_notdone = futures.wait(
-#             futures_notdone, return_when=futures.ALL_COMPLETED)
+#             # Should take about ~1h30 each
+#             job = executor.submit(
+#                 compute_and_save_nn_batched,
+#                 query_sentences_path,
+#                 db_sentences_paths,
+#                 topk,
+#                 nprobe,
+#                 indexes_dir,
+#                 nn_search_results_dir,
+#                 delete_intermediary=True,
+#             )
+#             jobs.append(job)
+#     print([job.job_id for job in jobs])
+#     [job.result() for job in tqdm(jobs)]
 # =============================================================================
+    lock = multiprocessing.Lock()
+    MAX_WORKERS = 2
+    #jobs = []
+    with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures_done = set()
+        futures_notdone = set()
+        for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
+            if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
+                continue
+            futures_notdone.add(executor.submit(compute_and_save_nn_batched,
+                                                query_sentences_path, db_sentences_paths,
+                                                topk, nprobe, indexes_dir,
+                                                nn_search_results_dir,
+                                                lock,
+                                                delete_intermediary=True,))
+
+            if len(futures_notdone) >= MAX_WORKERS:
+                done, futures_notdone = futures.wait(
+                    futures_notdone, return_when=futures.FIRST_COMPLETED)
+                # futures_done.update(done)
+                del done
+                gc.collect()
+
+        done, futures_notdone = futures.wait(
+            futures_notdone, return_when=futures.ALL_COMPLETED)
 
 # =============================================================================
 #     for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
@@ -351,18 +317,18 @@ with log_action('Mining paraphrases'):
 
 # Filter candidate paraphrases
 with log_action('Filtering candidate paraphrases'):
-    pairs_dir=cache_dir / 'pairs'
+    pairs_dir = cache_dir / 'pairs'
     pairs_dir.mkdir(exist_ok=True, parents=True)
-    filter_kwargs={
+    filter_kwargs = {
         'density': 0.6,
         'distance': 0.05,
         'levenshtein': 0.2,
         'simplicity': 0.0,
         'filter_ne': False,
     }  # Best for paraphrases
-    jobs=[]
-    paraphrase_pairs=[]
-    i=0
+    jobs = []
+    paraphrase_pairs = []
+    i = 0
     def is_simpler(pair): return True  # noqa: E731
     # Only used when mining simplifications
     if filter_kwargs.get('simplicity', 0) > 0:
@@ -380,10 +346,10 @@ with log_action('Filtering candidate paraphrases'):
                 )
             )
             i += 1
-        simplicity_scorer=SimplicityScorer(language=language)
+        simplicity_scorer = SimplicityScorer(language=language)
         simplicity_scorer.fit(paraphrase_pairs)
         def is_simpler(pair): return simplicity_scorer.score(*pair) > filter_kwargs['simplicity']  # noqa: E731
-    executor=get_executor(
+    executor = get_executor(
         cluster=cluster,
         slurm_partition=slurm_partition,
         timeout_min=2 * 60,
@@ -417,16 +383,16 @@ with log_action('Filtering candidate paraphrases'):
 #     [job.result() for job in tqdm(jobs)]
 # =============================================================================
 
-    jobs=[]
+    jobs = []
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-            simplification_pairs_path=get_pairs_path(
+            simplification_pairs_path = get_pairs_path(
                 query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
             )
             if simplification_pairs_path.exists():
                 continue
             # Should take about 30 minutes each
-            job=executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
+            job = executor.submit(compute_and_save_simplification_pairs, query_sentences_path=query_sentences_path,
                                   db_sentences_paths=db_sentences_paths,
                                   base_index_path=base_index_path,
                                   cache_dir=cache_dir,
@@ -464,10 +430,10 @@ with log_action('Filtering candidate paraphrases'):
 # =============================================================================
 
 with log_action('Wrapping up paraphrases'):
-    simplification_pairs=get_simplification_pairs_paths(
+    simplification_pairs = get_simplification_pairs_paths(
         query_sentences_paths, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
     )
-    results_str=f'query-{get_files_hash(query_sentences_paths)}_db-{get_files_hash(db_sentences_paths)}_topk-{topk}_nprobe-{nprobe}'
-    filter_str=get_filter_string_representation(filter_kwargs)
-    dataset=f'uts_{language}_{results_str}_{filter_str}'
+    results_str = f'query-{get_files_hash(query_sentences_paths)}_db-{get_files_hash(db_sentences_paths)}_topk-{topk}_nprobe-{nprobe}'
+    filter_str = get_filter_string_representation(filter_kwargs)
+    dataset = f'uts_{language}_{results_str}_{filter_str}'
     print(combine_simplifications_in_dataset(simplification_pairs, dataset))
