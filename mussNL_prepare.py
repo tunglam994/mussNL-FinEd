@@ -48,7 +48,7 @@ kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 
 
 def prepare_preprocessors_datasets(dataset, **kwargs):
-    check_dataset(dataset)
+    # check_dataset(dataset)
     kwargs = check_and_resolve_args(kwargs)
     exp_dir = prepare_exp_dir()
     preprocessors_kwargs = kwargs.get('preprocessors_kwargs', {})
