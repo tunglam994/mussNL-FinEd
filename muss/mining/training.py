@@ -229,7 +229,7 @@ def get_mbart_kwargs(dataset, language, use_access, use_short_name=False):
         'predict_files': get_predict_files(language),
         'preprocessors_kwargs': {
             'SentencePiecePreprocessor': {
-                'sentencepiece_model_path': mbart_dir / 'sentence.bpe.model',
+                # 'sentencepiece_model_path': mbart_dir / 'sentence.bpe.model',
                 'tokenize_special_tokens': True,
                 'vocab_size': 32000,
                 'input_filepaths': [
