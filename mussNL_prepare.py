@@ -44,10 +44,10 @@ kwargs = get_mbart_kwargs(dataset=dataset, language='nl', use_access=True)
 kwargs['train_kwargs']['ngpus'] = 1  # Set this from 8 to 1 for local training
 kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 
-#kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
-#kwargs['train_kwargs']['cpu-offload'] = True
-#kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
-kwargs['train_kwargs']['memory-efficient-fp16'] = True
+kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
+kwargs['train_kwargs']['cpu-offload'] = True
+kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
+#kwargs['train_kwargs']['memory-efficient-fp16'] = True
 kwargs['train_kwargs']['warmup_updates'] = 1
 kwargs['train_kwargs']['total-num-update'] = 2
 kwargs['train_kwargs']['max-update'] = 2
@@ -84,7 +84,7 @@ def fairseq_train(
     ngpus=1,
     # Batch size across all gpus (taking update freq into account)
     batch_size=8192,
-    max_sentences=1,  # 64,  # Max sentences per GPU
+    max_sentences=64,  # Max sentences per GPU
     arch='transformer',
     save_interval_updates=100,
     max_update=50000,
