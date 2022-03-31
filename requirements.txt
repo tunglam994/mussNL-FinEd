@@ -28,3 +28,5 @@ cachier>=1.2.8
 fastbpe
 transliterate
 npy-append-array
+fairscale
+deepspeed
