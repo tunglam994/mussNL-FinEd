@@ -356,7 +356,7 @@ class DependencyTreeDepthRatioPreprocessor(RatioPreprocessor):
             sentence, language=language), *args, **kwargs)
 
 
-def train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path, num_threads=64, max_lines=2*10 ** 7):
+def train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path, num_threads=64, max_lines=1.4*10 ** 6):
     with log_action('Training sentencepiece'):
         sentencepiece_model_path.parent.mkdir(parents=True, exist_ok=True)
         sentencepiece_model_prefix = sentencepiece_model_path.parent / \
