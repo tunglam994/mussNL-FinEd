@@ -44,9 +44,10 @@ kwargs = get_mbart_kwargs(dataset=dataset, language='nl', use_access=True)
 kwargs['train_kwargs']['ngpus'] = 1  # Set this from 8 to 1 for local training
 kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 
-kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
+#kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
 kwargs['train_kwargs']['cpu-offload'] = True
-kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
+#kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
+kwargs['train_kwargs']['--memory-efficient-fp16'] = True
 kwargs['train_kwargs']['warmup_updates'] = 1
 kwargs['train_kwargs']['total-num-update'] = 2
 kwargs['train_kwargs']['max-update'] = 2
