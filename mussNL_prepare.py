@@ -44,7 +44,7 @@ kwargs = get_mbart_kwargs(dataset=dataset, language='nl', use_access=True)
 kwargs['train_kwargs']['ngpus'] = 1  # Set this from 8 to 1 for local training
 kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 
-kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
+#kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
 kwargs['train_kwargs']['cpu-offload'] = True
 kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
 kwargs['train_kwargs']['warmup_updates'] = 1
@@ -111,7 +111,7 @@ def fairseq_train(
         distributed_port = random.randint(10000, 20000)
         args = f'''
         {preprocessed_dir} --task translation --source-lang complex --target-lang simple --save-dir {checkpoints_dir}
-        --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0
+        --optimizer cpu_adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0
         --criterion {criterion} --label-smoothing 0.1
         --lr-scheduler {lr_scheduler} --lr {lr} --warmup-updates {warmup_updates} --update-freq {update_freq}
         --arch {arch} --dropout {dropout} --weight-decay 0.0 --clip-norm 0.1 --share-all-embeddings
