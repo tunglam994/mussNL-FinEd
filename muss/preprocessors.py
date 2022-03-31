@@ -47,7 +47,8 @@ def get_preprocessor_by_name(preprocessor_name):
 def get_preprocessors(preprocessors_kwargs):
     preprocessors = []
     for preprocessor_name, kwargs in preprocessors_kwargs.items():
-        preprocessors.append(get_preprocessor_by_name(preprocessor_name)(**kwargs))
+        preprocessors.append(get_preprocessor_by_name(
+            preprocessor_name)(**kwargs))
     return preprocessors
 
 
@@ -90,7 +91,8 @@ class AbstractPreprocessor(ABC):
         args = getattr(self, 'args', ())
         kwargs = getattr(self, 'kwargs', {})
         args_repr = [repr(arg) for arg in args]
-        kwargs_repr = [f'{k}={repr(v)}' for k, v in sorted(kwargs.items(), key=lambda kv: kv[0])]
+        kwargs_repr = [f'{k}={repr(v)}' for k, v in sorted(
+            kwargs.items(), key=lambda kv: kv[0])]
         args_kwargs_str = ', '.join(args_repr + kwargs_repr)
         return f'{self.__class__.__name__}({args_kwargs_str})'
 
@@ -140,14 +142,16 @@ class AbstractPreprocessor(ABC):
             for encoder_sentence, input_sentence in yield_lines_in_parallel(
                 [encoder_filepath, input_filepath], strict=False
             ):
-                decoded_sentence = self.decode_sentence(input_sentence, encoder_sentence=encoder_sentence)
+                decoded_sentence = self.decode_sentence(
+                    input_sentence, encoder_sentence=encoder_sentence)
                 f.write(decoded_sentence + '\n')
 
     def encode_file_pair(self, complex_filepath, simple_filepath, output_complex_filepath, output_simple_filepath):
         '''Jointly encode a complex file and a simple file (can be aligned or not)'''
         with write_lines_in_parallel([output_complex_filepath, output_simple_filepath], strict=False) as output_files:
             for complex_line, simple_line in yield_lines_in_parallel([complex_filepath, simple_filepath], strict=False):
-                output_files.write(self.encode_sentence_pair(complex_line, simple_line))
+                output_files.write(self.encode_sentence_pair(
+                    complex_line, simple_line))
 
 
 class ComposedPreprocessor(AbstractPreprocessor):
@@ -157,11 +161,13 @@ class ComposedPreprocessor(AbstractPreprocessor):
             preprocessors = []
         if sort:
             # Make sure preprocessors are always in the same order
-            preprocessors = sorted(preprocessors, key=lambda preprocessor: preprocessor.__class__.__name__)
+            preprocessors = sorted(
+                preprocessors, key=lambda preprocessor: preprocessor.__class__.__name__)
         self.preprocessors = preprocessors
 
     def get_hash_string(self):
-        preprocessors_hash_strings = [preprocessor.get_hash_string() for preprocessor in self.preprocessors]
+        preprocessors_hash_strings = [
+            preprocessor.get_hash_string() for preprocessor in self.preprocessors]
         return f'ComposedPreprocessor(preprocessors={preprocessors_hash_strings})'
 
     def get_suffix(self):
@@ -184,14 +190,16 @@ class ComposedPreprocessor(AbstractPreprocessor):
     def encode_file(self, input_filepath, output_filepath, encoder_filepath=None):
         for preprocessor in self.preprocessors:
             intermediary_output_filepath = get_temp_filepath()
-            preprocessor.encode_file(input_filepath, intermediary_output_filepath, encoder_filepath)
+            preprocessor.encode_file(
+                input_filepath, intermediary_output_filepath, encoder_filepath)
             input_filepath = intermediary_output_filepath
         shutil.copyfile(input_filepath, output_filepath)
 
     def decode_file(self, input_filepath, output_filepath, encoder_filepath=None):
         for preprocessor in self.preprocessors:
             intermediary_output_filepath = get_temp_filepath()
-            preprocessor.decode_file(input_filepath, intermediary_output_filepath, encoder_filepath)
+            preprocessor.decode_file(
+                input_filepath, intermediary_output_filepath, encoder_filepath)
             input_filepath = intermediary_output_filepath
         shutil.copyfile(input_filepath, output_filepath)
 
@@ -212,7 +220,8 @@ class ComposedPreprocessor(AbstractPreprocessor):
 
     def encode_sentence_pair(self, complex_sentence, simple_sentence):
         for preprocessor in self.preprocessors:
-            complex_sentence, simple_sentence = preprocessor.encode_sentence_pair(complex_sentence, simple_sentence)
+            complex_sentence, simple_sentence = preprocessor.encode_sentence_pair(
+                complex_sentence, simple_sentence)
         return complex_sentence, simple_sentence
 
 
@@ -256,7 +265,8 @@ class FeaturePreprocessor(AbstractPreprocessor):
 
     def encode_sentence(self, sentence, encoder_sentence=None):
         if not self.prepend_to_target:
-            desired_feature = self.bucketize(self.get_target_feature_value(remove_special_tokens(sentence)))
+            desired_feature = self.bucketize(
+                self.get_target_feature_value(remove_special_tokens(sentence)))
             sentence = f'{self.get_feature_token(desired_feature)} {sentence}'
         return sentence
 
@@ -268,7 +278,8 @@ class FeaturePreprocessor(AbstractPreprocessor):
     def encode_sentence_pair(self, complex_sentence, simple_sentence):
         feature = self.bucketize(
             self.add_noise(
-                self.get_feature_value(remove_special_tokens(complex_sentence), remove_special_tokens(simple_sentence))
+                self.get_feature_value(remove_special_tokens(
+                    complex_sentence), remove_special_tokens(simple_sentence))
             )
         )
         if self.prepend_to_target:
@@ -317,7 +328,8 @@ class RatioPreprocessor(FeaturePreprocessor):
 
     def get_feature_value(self, complex_sentence, simple_sentence):
         return min(
-            failsafe_division(self.feature_extractor(simple_sentence), self.feature_extractor(complex_sentence)), 2
+            failsafe_division(self.feature_extractor(
+                simple_sentence), self.feature_extractor(complex_sentence)), 2
         )
 
     def get_target_feature_value(self, complex_sentence):
@@ -333,19 +345,22 @@ class LengthRatioPreprocessor(RatioPreprocessor):
 class WordRankRatioPreprocessor(RatioPreprocessor):
     @store_args
     def __init__(self, *args, language='en', **kwargs):
-        super().__init__(lambda sentence: get_lexical_complexity_score(sentence, language=language), *args, **kwargs)
+        super().__init__(lambda sentence: get_lexical_complexity_score(
+            sentence, language=language), *args, **kwargs)
 
 
 class DependencyTreeDepthRatioPreprocessor(RatioPreprocessor):
     @store_args
     def __init__(self, *args, language='en', **kwargs):
-        super().__init__(lambda sentence: get_dependency_tree_depth(sentence, language=language), *args, **kwargs)
+        super().__init__(lambda sentence: get_dependency_tree_depth(
+            sentence, language=language), *args, **kwargs)
 
 
-def train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path, num_threads=64, max_lines=10 ** 7):
+def train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path, num_threads=64, max_lines=2*10 ** 7):
     with log_action('Training sentencepiece'):
         sentencepiece_model_path.parent.mkdir(parents=True, exist_ok=True)
-        sentencepiece_model_prefix = sentencepiece_model_path.parent / sentencepiece_model_path.stem
+        sentencepiece_model_prefix = sentencepiece_model_path.parent / \
+            sentencepiece_model_path.stem
         args_str = f'''
         --bos_id=-1 --eos_id=-1
         --input={",".join([str(path) for path in input_filepaths])} --model_prefix={sentencepiece_model_prefix}
@@ -353,7 +368,8 @@ def train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path, n
         '''
         if sum([count_lines(filepath) for filepath in input_filepaths]) > max_lines:
             args_str += f' --input_sentence_size={max_lines} --shuffle_input_sentence=true'
-        args_str = remove_multiple_whitespaces(args_str.replace('\n', ' ')).strip(' ')
+        args_str = remove_multiple_whitespaces(
+            args_str.replace('\n', ' ')).strip(' ')
         spm.SentencePieceTrainer.Train(args_str)
         return sentencepiece_model_path
 
@@ -394,7 +410,8 @@ class SentencePiecePreprocessor(AbstractPreprocessor):
                 / f'sentencepiece_model/spm_files-{get_files_hash(input_filepaths)}_lines-{max_lines}_vocab-{vocab_size}.model'
             )  # noqa: E501
             if not sentencepiece_model_path.exists():
-                train_sentencepiece(input_filepaths, vocab_size, sentencepiece_model_path)
+                train_sentencepiece(
+                    input_filepaths, vocab_size, sentencepiece_model_path)
         self.sentencepiece_model_path = sentencepiece_model_path
 
     @property
@@ -417,7 +434,8 @@ class SentencePiecePreprocessor(AbstractPreprocessor):
             special_tokens, sentence = extract_special_tokens(sentence)
         # Instead of encoding directly to pieces with self.sp.EncodeAsPieces, we first encode as ids to enforce <unk> tokens when a token is not in the vocab
         spm_ids = self.sp.EncodeAsIds(sentence)
-        encoded_sentence = ' '.join(self.sp.id_to_piece(spm_id) for spm_id in spm_ids)
+        encoded_sentence = ' '.join(self.sp.id_to_piece(spm_id)
+                                    for spm_id in spm_ids)
         if special_tokens != '':
             encoded_sentence = f'{special_tokens} {encoded_sentence}'
         return encoded_sentence
@@ -429,7 +447,8 @@ class SentencePiecePreprocessor(AbstractPreprocessor):
         return write_sentencepiece_vocab_as_fairseq_dict(self.sp)
 
     def copy_sentencepiece_files_to_dir(self, dirpath):
-        shutil.copy(self.sentencepiece_model_path, dirpath)  # Copy with original name
+        shutil.copy(self.sentencepiece_model_path,
+                    dirpath)  # Copy with original name
         shutil.copyfile(
             self.sentencepiece_model_path, dirpath / 'sentencepiece.bpe.model'
         )  # Copy with standardized name
@@ -446,8 +465,10 @@ class GPT2BPEPreprocessor(AbstractPreprocessor):
         download(
             'https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/encoder.json', self.encoder_json_path, overwrite=False
         )
-        download('https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/vocab.bpe', self.vocab_bpe_path, overwrite=False)
-        download('https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/dict.txt', self.dict_path, overwrite=False)
+        download('https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/vocab.bpe',
+                 self.vocab_bpe_path, overwrite=False)
+        download('https://dl.fbaipublicfiles.com/fairseq/gpt2_bpe/dict.txt',
+                 self.dict_path, overwrite=False)
 
     @property
     @lru_cache(maxsize=1)
