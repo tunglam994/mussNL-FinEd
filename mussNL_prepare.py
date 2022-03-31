@@ -110,6 +110,7 @@ def fairseq_train(
         if seed is None:
             seed = random.randint(0, 1000)
         distributed_port = random.randint(10000, 20000)
+        lr_scheduler = 'inverse_sqrt'
         args = f'''
         {preprocessed_dir} --task translation --source-lang complex --target-lang simple --save-dir {checkpoints_dir}
         --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0
