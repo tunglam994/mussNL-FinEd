@@ -11,20 +11,29 @@ import shlex
 from pathlib import Path
 import re
 
+
+import sys
+from contextlib import contextmanager
+from types import MethodType
+import time
+from functools import wraps
+
 from fairseq_cli import train
 
-from muss.utils.helpers import (
-    log_std_streams,
-    # lock_directory,
-    # create_directory_or_skip,
-    # yield_lines,
-    # write_lines,
-    mock_cli_args,
-    # create_temp_dir,
-    # mute,
-    args_dict_to_str,
-    print_running_time,
-)
+# =============================================================================
+# from muss.utils.helpers import (
+#     log_std_streams,
+#     # lock_directory,
+#     # create_directory_or_skip,
+#     # yield_lines,
+#     # write_lines,
+#     mock_cli_args,
+#     # create_temp_dir,
+#     # mute,
+#     args_dict_to_str,
+#     print_running_time,
+# )
+# =============================================================================
 
 from muss.text import remove_multiple_whitespaces
 from muss.utils.training import clear_cuda_cache
@@ -32,8 +41,112 @@ from muss.utils.training import clear_cuda_cache
 from muss.fairseq.main import prepare_exp_dir
 
 from muss.mining.training import get_mbart_kwargs
+# %%
+
+
+@contextmanager
+def redirect_streams(source_streams, target_streams):
+    # We assign these functions before hand in case a target stream is also a source stream.
+    # If it's the case then the write function would be patched leading to infinie recursion
+    target_writes = [target_stream.write for target_stream in target_streams]
+    target_flushes = [target_stream.flush for target_stream in target_streams]
+
+    def patched_write(self, message):
+        for target_write in target_writes:
+            target_write(message)
+
+    def patched_flush(self):
+        for target_flush in target_flushes:
+            target_flush()
+
+    original_source_stream_writes = [
+        source_stream.write for source_stream in source_streams]
+    original_source_stream_flushes = [
+        source_stream.flush for source_stream in source_streams]
+    try:
+        for source_stream in source_streams:
+            source_stream.write = MethodType(patched_write, source_stream)
+            source_stream.flush = MethodType(patched_flush, source_stream)
+        yield
+    finally:
+        for source_stream, original_source_stream_write, original_source_stream_flush in zip(
+            source_streams, original_source_stream_writes, original_source_stream_flushes
+        ):
+            source_stream.write = original_source_stream_write
+            source_stream.flush = original_source_stream_flush
+
+
+@contextmanager
+def log_std_streams(filepath):
+    log_file = open(filepath, 'w', encoding='utf-8')
+    try:
+        with redirect_streams(source_streams=[sys.stdout], target_streams=[log_file, sys.stdout]):
+            with redirect_streams(source_streams=[sys.stderr], target_streams=[log_file, sys.stderr]):
+                yield
+    finally:
+        log_file.close()
+
+
+def arg_name_python_to_cli(arg_name, cli_sep='-'):
+    arg_name = arg_name.replace('_', cli_sep)
+    return f'--{arg_name}'
+
+
+def kwargs_to_cli_args_list(kwargs, cli_sep='-'):
+    cli_args_list = []
+    for key, val in kwargs.items():
+        key = arg_name_python_to_cli(key, cli_sep)
+        if isinstance(val, bool):
+            cli_args_list.append(str(key))
+        else:
+            if isinstance(val, str):
+                # Add quotes around val
+                assert "'" not in val
+                val = f"'{val}'"
+            cli_args_list.extend([str(key), str(val)])
+    return cli_args_list
+
+
+def args_dict_to_str(args_dict, cli_sep='-'):
+    return ' '.join(kwargs_to_cli_args_list(args_dict, cli_sep=cli_sep))
 
 # %%
+
+
+@contextmanager
+def log_action(action_description):
+    start_time = time.time()
+    print(f'{action_description}...')
+    try:
+        yield
+    except BaseException as e:
+        print(f'{action_description} failed after {time.time() - start_time:.2f}s.')
+        raise e
+    print(f'{action_description} completed after {time.time() - start_time:.2f}s.')
+
+
+def print_running_time(func):
+    '''Decorator to print running time of function for logging purposes'''
+
+    @wraps(func)  # To preserve the name and path for pickling purposes
+    def wrapped_func(*args, **kwargs):
+        function_name = getattr(func, '__name__', repr(func))
+        with log_action(function_name):
+            return func(*args, **kwargs)
+
+    return wrapped_func
+# %%
+
+
+@contextmanager
+def mock_cli_args(args):
+    current_args = sys.argv
+    sys.argv = sys.argv[:1] + args
+    yield
+    sys.argv = current_args
+
+# %%
+
 
 dataset = 'uts_nl_query-9fcb6f786a1339d290dde06e16935402_db-9fcb6f786a1339d290dde06e16935402_topk-8_nprobe-16_density-0.6_distance-0.05_filter_ne-False_levenshtein-0.2_simplicity-0.0'
 
