@@ -472,6 +472,8 @@ preprocessed_dir = './resources/datasets/fairseq_preprocessed_complex-simple'
 
 dir_name = f'local_{int(time.time() * 1000)}'
 exp_dir = Path('./experiments/fairseq/') / dir_name
+exp_dir.mkdir(exist_ok=True, parents=True)
+print(f'exp_dir={exp_dir}')
 train_kwargs = kwargs.get('train_kwargs', {})
 
 print_running_time(fairseq_train)(
