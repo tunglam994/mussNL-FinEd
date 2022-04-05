@@ -38,8 +38,6 @@ from fairseq_cli import train
 from muss.text import remove_multiple_whitespaces
 from muss.utils.training import clear_cuda_cache
 
-from muss.fairseq.main import prepare_exp_dir
-
 from muss.mining.training import get_mbart_kwargs
 # %%
 
@@ -226,7 +224,9 @@ def fairseq_train(
 # %%
 
 preprocessed_dir = './resources/datasets/fairseq_preprocessed_complex-simple'
-exp_dir = prepare_exp_dir()
+
+dir_name = f'local_{int(time.time() * 1000)}'
+exp_dir = Path('./experiments/fairseq/') / dir_name
 train_kwargs = kwargs.get('train_kwargs', {})
 
 print_running_time(fairseq_train)(
