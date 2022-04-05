@@ -345,6 +345,7 @@ def args_str_to_dict(args_str):
 def get_mbart_kwargs(dataset, language, use_access, use_short_name=False):
     mbart_dir = prepare_mbart_model()
     mbart_path = mbart_dir / 'model.pt'
+    mbart_path = str(mbart_path).replace('\\', '/')
     # source_lang = f'{language}_XX'
     # target_lang = f'{language}_XX'
     source_lang = 'complex'
