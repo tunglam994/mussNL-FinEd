@@ -10,7 +10,17 @@ import random
 import shlex
 from pathlib import Path
 import re
+import tempfile
+from urllib.request import urlretrieve
+import os
 
+import bz2
+import gzip
+import tarfile
+import zipfile
+
+import tqdm
+import ast
 
 import sys
 from contextlib import contextmanager
@@ -38,7 +48,7 @@ from fairseq_cli import train
 from muss.text import remove_multiple_whitespaces
 from muss.utils.training import clear_cuda_cache
 
-from muss.mining.training import get_mbart_kwargs
+#from muss.mining.training import get_mbart_kwargs
 # %%
 
 
@@ -143,9 +153,244 @@ def mock_cli_args(args):
     yield
     sys.argv = current_args
 
+
+# %%
+TEMP_DIR = None
+
+
+def get_temp_filepath(create=False):
+    global TEMP_DIR
+    temp_filepath = Path(tempfile.mkstemp()[1])
+    if TEMP_DIR is not None:
+        temp_filepath.unlink()
+        temp_filepath = TEMP_DIR / temp_filepath.name
+        temp_filepath.touch(exist_ok=False)
+    if not create:
+        temp_filepath.unlink()
+    return temp_filepath
+
+
+def reporthook(count, block_size, total_size):
+    # Download progress bar
+    global start_time
+    if count == 0:
+        start_time = time.time()
+        return
+    duration = time.time() - start_time
+    progress_size_mb = count * block_size / (1024 * 1024)
+    speed = progress_size_mb / duration
+    percent = int(count * block_size * 100 / total_size)
+    msg = f'\r... {percent}% - {int(progress_size_mb)} MB - {speed:.2f} MB/s - {int(duration)}s'
+    sys.stdout.write(msg)
+
+
+def download(url, destination_path=None, overwrite=True):
+    if destination_path is None:
+        destination_path = get_temp_filepath()
+    if not overwrite and destination_path.exists():
+        return destination_path
+    print('Downloading...')
+    try:
+        urlretrieve(url, destination_path, reporthook)
+        sys.stdout.write('\n')
+    except (Exception, KeyboardInterrupt, SystemExit):
+        print('Rolling back: remove partially downloaded file')
+        os.remove(destination_path)
+        raise
+    return destination_path
+
+
+def untar(compressed_path, output_dir):
+    with tarfile.open(compressed_path) as f:
+        f.extractall(output_dir)
+
+
+def unzip(compressed_path, output_dir):
+    with zipfile.ZipFile(compressed_path, 'r') as f:
+        f.extractall(output_dir)
+
+
+def ungzip(compressed_path, output_dir):
+    filename = os.path.basename(compressed_path)
+    assert filename.endswith('.gz')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_path = os.path.join(output_dir, filename[:-3])
+    with gzip.open(compressed_path, 'rb') as f_in:
+        with open(output_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+
+def unbz2(compressed_path, output_dir):
+    extract_filename = os.path.basename(compressed_path).replace('.bz2', '')
+    extract_path = os.path.join(output_dir, extract_filename)
+    with bz2.BZ2File(compressed_path, 'rb') as compressed_file, open(extract_path, 'wb') as extract_file:
+        for data in tqdm(iter(lambda: compressed_file.read(1024 * 1024), b'')):
+            extract_file.write(data)
+
+
+def move_with_overwrite(source_path, target_path):
+    if os.path.isfile(target_path):
+        os.remove(target_path)
+    if os.path.isdir(target_path) and os.path.isdir(source_path):
+        shutil.rmtree(target_path)
+    shutil.move(source_path, target_path)
+
+
+def extract(filepath, output_dir):
+    output_dir = Path(output_dir)
+    # Infer extract function based on extension
+    extensions_to_functions = {
+        '.tar.gz': untar,
+        '.tar.bz2': untar,
+        '.tgz': untar,
+        '.zip': unzip,
+        '.gz': ungzip,
+        '.bz2': unbz2,
+    }
+
+    def get_extension(filename, extensions):
+        possible_extensions = [
+            ext for ext in extensions if filename.endswith(ext)]
+        if len(possible_extensions) == 0:
+            raise Exception(f'File {filename} has an unknown extension')
+        # Take the longest (.tar.gz should take precedence over .gz)
+        return max(possible_extensions, key=lambda ext: len(ext))
+
+    filename = os.path.basename(filepath)
+    extension = get_extension(filename, list(extensions_to_functions))
+    extract_function = extensions_to_functions[extension]
+
+    # Extract files in a temporary dir then move the extracted item back to
+    # the ouput dir in order to get the details of what was extracted
+    tmp_extract_dir = Path(tempfile.mkdtemp())
+    # Extract
+    extract_function(filepath, output_dir=tmp_extract_dir)
+    extracted_items = os.listdir(tmp_extract_dir)
+    output_paths = []
+    for name in extracted_items:
+        extracted_path = tmp_extract_dir / name
+        output_path = output_dir / name
+        move_with_overwrite(extracted_path, output_path)
+        output_paths.append(output_path)
+    return output_paths
+
+
+def download_and_extract(url):
+    tmp_dir = Path(tempfile.mkdtemp())
+    compressed_filename = url.split('/')[-1]
+    compressed_filepath = tmp_dir / compressed_filename
+    download(url, compressed_filepath)
+    print('Extracting...')
+    extracted_paths = extract(compressed_filepath, tmp_dir)
+    compressed_filepath.unlink()
+    return extracted_paths
+
+
+MODELS_DIR = Path('./resources/models/')
+
+
+def prepare_mbart_model():
+    mbart_dir = MODELS_DIR / 'mbart'
+    if not mbart_dir.exists():
+        url = 'https://dl.fbaipublicfiles.com/fairseq/models/mbart/mbart.CC25.tar.gz'
+        shutil.move(download_and_extract(url)[0], mbart_dir)
+    return
+
 # %%
 
 
+def add_dicts(*dicts):
+    return {k: v for dic in dicts for k, v in dic.items()}
+
+
+def arg_name_cli_to_python(arg_name, cli_sep='-'):
+    assert arg_name.startswith('--')
+    arg_name = arg_name.strip('-').replace(cli_sep, '_')
+    return arg_name
+
+
+def failsafe_ast_literal_eval(expression):
+    try:
+        return ast.literal_eval(expression.replace('PosixPath', ''))
+    except (SyntaxError, ValueError):
+        return expression
+
+
+def cli_args_list_to_kwargs(cli_args_list):
+    kwargs = {}
+    i = 0
+    while i < len(cli_args_list) - 1:
+        assert cli_args_list[i].startswith('--'), cli_args_list[i]
+        key = arg_name_cli_to_python(cli_args_list[i])
+        next_element = cli_args_list[i + 1]
+        if next_element.startswith('--'):
+            kwargs[key] = True
+            i += 1
+        else:
+            try:
+                kwargs[key] = failsafe_ast_literal_eval(next_element)
+            except (SyntaxError, ValueError):
+                kwargs[key] = cli_args_list[i + 1]
+            i += 2
+    return kwargs
+
+
+def args_str_to_dict(args_str):
+    return cli_args_list_to_kwargs(shlex.split(args_str))
+
+# %%
+
+
+def get_mbart_kwargs(dataset, language, use_access, use_short_name=False):
+    mbart_dir = prepare_mbart_model()
+    mbart_path = mbart_dir / 'model.pt'
+    # source_lang = f'{language}_XX'
+    # target_lang = f'{language}_XX'
+    source_lang = 'complex'
+    target_lang = 'simple'
+    kwargs = {
+        'dataset': dataset,
+        'metrics_coefs': [0, 1, 0],
+        'parametrization_budget': 128,
+        # 'predict_files': get_predict_files(language),
+        'preprocessors_kwargs': {
+            'SentencePiecePreprocessor': {
+                'sentencepiece_model_path': mbart_dir / 'sentence.bpe.model',
+                'tokenize_special_tokens': True,
+                # 'vocab_size': 32000,
+                # 'input_filepaths': [
+                #    get_data_filepath(dataset, 'train', 'complex'),
+                #    get_data_filepath(dataset, 'train', 'simple'),
+                # ],
+            },
+        },
+        'preprocess_kwargs': {
+            'dict_path': mbart_dir / 'dict.txt',
+            'source_lang': source_lang,
+            'target_lang': target_lang,
+        },
+        'train_kwargs': add_dicts(
+            {'ngpus': 8},
+            # args_str_to_dict(
+                # f'''--restore-file {mbart_path}  --arch mbart_large --task translation_from_pretrained_bart  --source-lang {source_lang} --target-lang {target_lang}  --encoder-normalize-before --decoder-normalize-before --criterion label_smoothed_cross_entropy --label-smoothing 0.2  --dataset-impl mmap --optimizer adam --adam-eps 1e-06 --adam-betas '(0.9, 0.98)' --lr-scheduler polynomial_decay --lr 3e-05 --warmup-updates 2500 --total-num-update 40000 --dropout 0.3 --attention-dropout 0.1  --weight-decay 0.0 --max-tokens 1024 --update-freq 2 --log-format simple --log-interval 2 --reset-optimizer --reset-meters --reset-dataloader --reset-lr-scheduler --langs ar_AR,cs_CZ,de_DE,en_XX,es_XX,et_EE,fi_FI,fr_XX,gu_IN,hi_IN,it_IT,ja_XX,kk_KZ,ko_KR,lt_LT,lv_LV,my_MM,ne_NP,nl_XX,ro_RO,ru_RU,si_LK,tr_TR,vi_VN,zh_CN
+     # --layernorm-embedding  --ddp-backend no_c10d'''
+            # ),
+             args_str_to_dict(
+                 f'''--restore-file {mbart_path}  --arch mbart_large --task translation_from_pretrained_bart  --source-lang {source_lang} --target-lang {target_lang}  --encoder-normalize-before --decoder-normalize-before --criterion label_smoothed_cross_entropy --label-smoothing 0.2  --dataset-impl mmap --optimizer adam --adam-eps 1e-06 --adam-betas '(0.9, 0.98)' --lr-scheduler polynomial_decay --lr 3e-05 --min-lr -1 --warmup-updates 2500 --total-num-update 40000 --dropout 0.3 --attention-dropout 0.1  --weight-decay 0.0 --max-tokens 1024 --update-freq 2 --log-format simple --log-interval 2 --reset-optimizer --reset-meters --reset-dataloader --reset-lr-scheduler --langs ar_AR,cs_CZ,de_DE,en_XX,es_XX,et_EE,fi_FI,fr_XX,gu_IN,hi_IN,it_IT,ja_XX,kk_KZ,ko_KR,lt_LT,lv_LV,my_MM,ne_NP,nl_XX,ro_RO,ru_RU,si_LK,tr_TR,vi_VN,zh_CN
+      --layernorm-embedding  --ddp-backend no_c10d'''
+             ),
+        ),  # noqa: E501
+        'generate_kwargs': args_str_to_dict(
+            f'''--task translation_from_pretrained_bart --source_lang {source_lang} --target-lang {target_lang} --batch-size 32 --langs ar_AR,cs_CZ,de_DE,en_XX,es_XX,et_EE,fi_FI,fr_XX,gu_IN,hi_IN,it_IT,ja_XX,kk_KZ,ko_KR,lt_LT,lv_LV,my_MM,ne_NP,nl_XX,ro_RO,ru_RU,si_LK,tr_TR,vi_VN,zh_CN'''  # noqa: E501
+        ),
+        # 'evaluate_kwargs': get_evaluate_kwargs(language),
+    }
+
+    return kwargs
+
+
+# %%
 dataset = 'uts_nl_query-9fcb6f786a1339d290dde06e16935402_db-9fcb6f786a1339d290dde06e16935402_topk-8_nprobe-16_density-0.6_distance-0.05_filter_ne-False_levenshtein-0.2_simplicity-0.0'
 
 kwargs = get_mbart_kwargs(dataset=dataset, language='nl', use_access=True)
