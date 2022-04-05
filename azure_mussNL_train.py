@@ -405,6 +405,7 @@ kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 kwargs['train_kwargs']['warmup_updates'] = 1
 kwargs['train_kwargs']['total-num-update'] = 2
 kwargs['train_kwargs']['max-update'] = 2
+kwargs['train_kwargs']['save_interval_updates'] = 1
 
 
 @clear_cuda_cache
