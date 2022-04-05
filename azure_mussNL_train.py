@@ -295,7 +295,7 @@ def prepare_mbart_model():
     if not mbart_dir.exists():
         url = 'https://dl.fbaipublicfiles.com/fairseq/models/mbart/mbart.CC25.tar.gz'
         shutil.move(download_and_extract(url)[0], mbart_dir)
-    return
+    return mbart_dir
 
 # %%
 
