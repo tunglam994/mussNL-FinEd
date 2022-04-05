@@ -287,7 +287,7 @@ def download_and_extract(url):
     return extracted_paths
 
 
-MODELS_DIR = Path('./resources/models/')
+MODELS_DIR = Path('.//resources//models//')
 
 
 def prepare_mbart_model():
@@ -468,10 +468,11 @@ def fairseq_train(
 
 # %%
 
-preprocessed_dir = './resources/datasets/fairseq_preprocessed_complex-simple'
+preprocessed_dir = Path(
+    './/resources//datasets//fairseq_preprocessed_complex-simple')
 
 dir_name = f'local_{int(time.time() * 1000)}'
-exp_dir = Path('./experiments/fairseq/') / dir_name
+exp_dir = Path('.//experiments//fairseq//') / dir_name
 exp_dir.mkdir(exist_ok=True, parents=True)
 print(f'exp_dir={exp_dir}')
 train_kwargs = kwargs.get('train_kwargs', {})
