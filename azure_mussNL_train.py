@@ -401,7 +401,7 @@ kwargs['train_kwargs']['max_tokens'] = 512  # Lower this number to prevent OOM
 #kwargs['train_kwargs']['optimizer'] = 'cpu_adam'
 #kwargs['train_kwargs']['cpu-offload'] = True
 #kwargs['train_kwargs']['ddp-backend'] = 'fully_sharded'
-#kwargs['train_kwargs']['memory-efficient-fp16'] = True
+kwargs['train_kwargs']['memory-efficient-fp16'] = True
 kwargs['train_kwargs']['warmup_updates'] = 1
 kwargs['train_kwargs']['total-num-update'] = 2
 kwargs['train_kwargs']['max-update'] = 2
@@ -428,6 +428,8 @@ def fairseq_train(
     fp16=True,
     **kwargs,
 ):
+    #os.makedirs('outputs', exist_ok=True)
+    #exp_dir = Path('outputs')
     with log_std_streams(exp_dir / 'fairseq_train.stdout'):
         exp_dir = Path(exp_dir)
         preprocessed_dir = Path(preprocessed_dir)
@@ -441,9 +443,11 @@ def fairseq_train(
         if seed is None:
             seed = random.randint(0, 1000)
         distributed_port = random.randint(10000, 20000)
-        preprocessed_dir = str(preprocessed_dir).replace('\\', '/')
-        checkpoints_dir = str(checkpoints_dir).replace('\\', '/')
-
+        #preprocessed_dir = str(preprocessed_dir).replace('\\', '/')
+        #checkpoints_dir = str(checkpoints_dir).replace('\\', '/')
+        #os.makedirs('outputs', exist_ok=True)
+        #checkpoints_dir = 'outputs'
+        
         args = f'''
         {preprocessed_dir} --task translation --source-lang complex --target-lang simple --save-dir {checkpoints_dir}
         --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0
@@ -473,7 +477,7 @@ def fairseq_train(
 # %%
 
 preprocessed_dir = Path(
-    './/resources//datasets//fairseq_preprocessed_complex-simple')
+    './/resources//datasets//_67c15bcee9e367faaeaeb37990f01711//fairseq_preprocessed_complex-simple')
 
 dir_name = f'local_{int(time.time() * 1000)}'
 exp_dir = Path('.//experiments//fairseq//') / dir_name
@@ -481,5 +485,7 @@ exp_dir.mkdir(exist_ok=True, parents=True)
 print(f'exp_dir={exp_dir}')
 train_kwargs = kwargs.get('train_kwargs', {})
 
-print_running_time(fairseq_train)(
-    preprocessed_dir, exp_dir=exp_dir, **train_kwargs)
+
+if __name__ == '__main__':
+    print_running_time(fairseq_train)(
+        preprocessed_dir, exp_dir=exp_dir, **train_kwargs)
