@@ -27,14 +27,26 @@ pip install -e .  # Install package
 python -m spacy download nl_core_news_md  # Install required spacy models
 ```
 
-Also, to use the NLTK Tokenizer, you should open a python terminal and execute the following commands
+To obtain monolingual data in the paper, Facebook's [CCNet](https://github.com/facebookresearch/cc_net) is used to scrape high quality data from a
+[Common Crawl](https://commoncrawl.org/) snapshot. This however requires a system with high amounts of storage. That is why I used
+[CC-100: Monolingual Datasets from Web Crawl Data](https://data.statmt.org/cc-100/), the authors of whom have been nice enough to 
+provide monolingual data extracted from a 2018 Common Crawl snapshot using CCNet. To get the data in the files provided by them in the
+right format to be used by the mine_sequences.py script, first preprocess it with cc100preprocessor.py.
+
+To use the NLTK Tokenizer, you should open a python terminal and execute the following commands
 
 ```python
 import nltk
 nltk.download()
 ```
+After these commands a menu pops up. Navigate to download the package 'punkt', and you're good to go.
 
-After these commands, menu pops up. Navigate to download the package 'punkt', and you're good to go.
+In order to clean the textdata of text that has a low language model probability, KenLM is used. I used Facebook's [CCNet](https://github.com/facebookresearch/cc_net)
+to download a pretrained KenLM language model together with it's concurrent Sentencepiece tokenizer. Place both components in the directory
+'resources/models/language_models/'. If you're using a language other than English, French, Spanish or Dutch, you should alter the code to recognize your language in
+muss.mining.preprocessing.py.
+
+
 
 ## How to use
 Some scripts might still contain a few bugs, if you notice anything wrong, feel free to open an issue or submit a Pull Request.
