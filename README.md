@@ -9,10 +9,9 @@ improvement in performance in natural language processing (NLP). The problem wit
 
 This problem is countered in the paper [MUSS: Multilingual Unsupervised Sentence Simplification by Mining Paraphrases](https://github.com/facebookresearch/muss), 
 which, as the name suggests, can train a state of the art text simplification model with unlabelled data. To implement this strategy for 
-the Dutch language, I forked the repository and made the necessary alterations. Furthermore, as the original code was trained on the 
-Facebook supercomputer cluster, I made it work with my workstation with 32GB RAM and a RTX 2070 super 8GB.
-
-Code and pretrained models to reproduce experiments in "MUSS: Multilingual Unsupervised Sentence Simplification by Mining Paraphrases".
+the Dutch language, I forked the repository. As the author had acces to the Facebook supercomputer cluster, I made the necessary 
+alterations to the paraphrase mining code to make it work on my workstation with 32GB RAM and a RTX 2070 super 8GB. The training of the
+model is done on an Azure cloud VM using the Azure Python SDK. See Azure_mussNL.ipynb.
 
 ## Prerequisites
 
