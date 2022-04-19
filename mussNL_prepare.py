@@ -144,5 +144,5 @@ preprocessed_dir, exp_dir, train_kwargs = print_running_time(
 # %%
 
 
-print_running_time(fairseq_train)(
-    preprocessed_dir, exp_dir=exp_dir, **train_kwargs)
+# print_running_time(fairseq_train)(
+#    preprocessed_dir, exp_dir=exp_dir, **train_kwargs)

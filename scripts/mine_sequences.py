@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  7 17:14:04 2022
 
-@author: johan
-"""
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
@@ -88,20 +83,6 @@ with log_action('Splitting CCNet shards into smaller subshards'):
                    f'{language}_head_{i:04d}' for i in range(n_shards)]
     # int(input('How many sentences should be added to each subshard: '))
     n_docs_per_file = 50000
-# =============================================================================
-#     executor = get_executor(cluster=cluster, slurm_partition='dev',
-#                             timeout_min=1 * 30, slurm_array_parallelism=16)
-#     jobs = []
-#     with executor.batch():
-#         for ccnet_filepath, output_dir in zip(ccnet_filepaths, output_dirs):
-#             if output_dir.exists():
-#                 continue
-#             job = executor.submit(
-#                 split_ccnet_shard, ccnet_filepath, output_dir, n_docs_per_file)
-#             jobs.append(job)
-#     print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]  # Wait for the jobs to finish
-# =============================================================================
 
     jobs = []
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -111,37 +92,12 @@ with log_action('Splitting CCNet shards into smaller subshards'):
             job = executor.submit(split_ccnet_shard, ccnet_filepath,
                                   output_dir, n_docs_per_file)
             jobs.append(job)
-    # print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 # Sentence tokenization
 with log_action('Tokenizing sentences'):
 
     subshard_paths = get_subshard_paths(raw_original_dir)
-# =============================================================================
-#     jobs = []
-#     with executor.batch():
-#         for i, subshard_path in enumerate(subshard_paths):
-#             sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
-#             if sentences_path.exists():
-#                 continue
-#             sentences_path.parent.mkdir(exist_ok=True, parents=True)
-#             # Should take a bit less than 10 minutes each
-#             job = executor.submit(sentence_tokenize_subshard,
-#                                   subshard_path, sentences_path, language)
-#             jobs.append(job)
-#     print([job.job_id for job in jobs])
-#     [job.result() for job in tqdm(jobs)]
-# =============================================================================
-
-# =============================================================================
-#     for i, subshard_path in tqdm(enumerate(subshard_paths)):
-#         sentences_path = dataset_dir / 'sentences' / f'{i:06d}.txt.gz'
-#         if sentences_path.exists():
-#             continue
-#         sentences_path.parent.mkdir(exist_ok=True, parents=True)
-#         sentence_tokenize_subshard(subshard_path, sentences_path, language)
-# =============================================================================
 
     jobs = []
     with futures.ThreadPoolExecutor(max_workers=6) as executor:
@@ -153,7 +109,6 @@ with log_action('Tokenizing sentences'):
             job = executor.submit(sentence_tokenize_subshard,
                                   subshard_path, sentences_path, language)
             jobs.append(job)
-    # print([job.job_id for job in jobs])
     [job.result() for job in tqdm(jobs)]
 
 embeddings_type_name = f'laser_{language}'
@@ -229,29 +184,27 @@ with log_action('Computing embeddings'):
 #             del done, futures_notdone
 # =============================================================================
 
-# =============================================================================
-#     MAX_WORKERS = 12
-#     #jobs = []
-#     with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-#         futures_done = set()
-#         futures_notdone = set()
-#         for sentences_path in set(query_sentences_paths + db_sentences_paths):
-#             if get_index_path(sentences_path, indexes_dir).exists():
-#                 continue
-#             futures_notdone.add(executor.submit(
-#                 compute_and_save_embeddings, sentences_path, base_index_path,
-#                 get_embeddings, indexes_dir=indexes_dir))
-#
-#             if len(futures_notdone) >= MAX_WORKERS:
-#                 done, futures_notdone = futures.wait(
-#                     futures_notdone, return_when=futures.FIRST_COMPLETED)
-#                 # futures_done.update(done)
-#                 del done
-#                 gc.collect()
-#
-#         done, futures_notdone = futures.wait(
-#             futures_notdone, return_when=futures.ALL_COMPLETED)
-# =============================================================================
+    MAX_WORKERS = 12
+    #jobs = []
+    with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures_done = set()
+        futures_notdone = set()
+        for sentences_path in set(query_sentences_paths + db_sentences_paths):
+            if get_index_path(sentences_path, indexes_dir).exists():
+                continue
+            futures_notdone.add(executor.submit(
+                compute_and_save_embeddings, sentences_path, base_index_path,
+                get_embeddings, indexes_dir=indexes_dir))
+
+            if len(futures_notdone) >= MAX_WORKERS:
+                done, futures_notdone = futures.wait(
+                    futures_notdone, return_when=futures.FIRST_COMPLETED)
+                # futures_done.update(done)
+                del done
+                gc.collect()
+
+        done, futures_notdone = futures.wait(
+            futures_notdone, return_when=futures.ALL_COMPLETED)
 
 
 # Mine the paraphrases
@@ -300,52 +253,6 @@ with log_action('Mining paraphrases'):
         calculate_distances(query_sentences_path, db_sentences_paths,
                             intermediary_results_paths, offsets, topk,
                             nprobe, nn_search_results_dir)
-
-
-# =============================================================================
-#     for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-#         if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
-#             continue
-#         compute_and_save_nn_batched(query_sentences_path, db_sentences_paths,
-#                                     topk, nprobe, indexes_dir, nn_search_results_dir, delete_intermediary=True,)
-# =============================================================================
-
-
-# =============================================================================
-#     lock = multiprocessing.Lock()
-#     MAX_WORKERS = 2
-#     #jobs = []
-#     with futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-#         futures_done = set()
-#         futures_notdone = set()
-#         for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-#             if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
-#                 continue
-#             futures_notdone.add(executor.submit(compute_and_save_nn_batched,
-#                                                 query_sentences_path, db_sentences_paths,
-#                                                 topk, nprobe, indexes_dir,
-#                                                 nn_search_results_dir,
-#                                                 lock,
-#                                                 delete_intermediary=True,))
-#
-#             if len(futures_notdone) >= MAX_WORKERS:
-#                 done, futures_notdone = futures.wait(
-#                     futures_notdone, return_when=futures.FIRST_COMPLETED)
-#                 # futures_done.update(done)
-#                 del done
-#                 gc.collect()
-#
-#         done, futures_notdone = futures.wait(
-#             futures_notdone, return_when=futures.ALL_COMPLETED)
-# =============================================================================
-
-# =============================================================================
-#     for query_sentences_path in tqdm(query_sentences_paths, desc='submitting queries'):
-#         if get_results_path(query_sentences_path, db_sentences_paths, topk, nprobe, nn_search_results_dir).exists():
-#             continue
-#         compute_and_save_nn_batched(query_sentences_path, db_sentences_paths,
-#                                     topk, nprobe, indexes_dir, nn_search_results_dir, delete_intermediary=True,)
-# =============================================================================
 
 
 # Filter candidate paraphrases
@@ -418,28 +325,6 @@ with log_action('Filtering candidate paraphrases'):
         done, futures_notdone = futures.wait(
             futures_notdone, return_when=futures.ALL_COMPLETED)
         del done, futures_notdone
-
-
-# =============================================================================
-#     for query_sentences_path in tqdm(query_sentences_paths, desc='query'):
-#         simplification_pairs_path = get_pairs_path(
-#             query_sentences_path, db_sentences_paths, topk, nprobe, filter_kwargs, pairs_dir
-#         )
-#         if simplification_pairs_path.exists():
-#             continue
-#
-#         compute_and_save_simplification_pairs(query_sentences_path=query_sentences_path,
-#                                               db_sentences_paths=db_sentences_paths,
-#                                               base_index_path=base_index_path,
-#                                               cache_dir=cache_dir,
-#                                               pairs_dir=pairs_dir,
-#                                               get_embeddings=get_embeddings,
-#                                               topk=topk,
-#                                               nprobe=nprobe,
-#                                               language=language,
-#                                               filter_kwargs=filter_kwargs,
-#                                               is_simpler=is_simpler)
-# =============================================================================
 
 
 with log_action('Wrapping up paraphrases'):
