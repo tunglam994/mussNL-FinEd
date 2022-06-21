@@ -1,6 +1,7 @@
 # Multilingual Unsupervised Sentence Simplification, Dutch Implementation
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/johanbekker/mussstreamlit/app.py)
+
 Follow the Streamlit button above to check out a webapp hosting a smaller model (MarianMT) trained on the Dutch mined paraphrase data!
 
 For people who have cognitive disabilities or are not native speakers of a language long and complex sentences can be hard to comprehend. 
