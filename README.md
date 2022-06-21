@@ -1,5 +1,8 @@
 # Multilingual Unsupervised Sentence Simplification, Dutch Implementation
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/johanbekker/mussstreamlit/app.py)
+Follow the Streamlit button above to check out a webapp hosting a smaller model (MarianMT) trained on the Dutch mined paraphrase data!
+
 For people who have cognitive disabilities or are not native speakers of a language long and complex sentences can be hard to comprehend. 
 For this reason social instances with a large reach, like governmental instances, have to address people in a simple manner. 
 For a person who has a thorough understanding of a language, writing a ‘simple’ sentence can be challenging.
@@ -9,9 +12,13 @@ improvement in performance in natural language processing (NLP). The problem wit
 
 This problem is countered in the paper [MUSS: Multilingual Unsupervised Sentence Simplification by Mining Paraphrases](https://github.com/facebookresearch/muss), 
 which, as the name suggests, can train a state of the art text simplification model with unlabelled data. To implement this strategy for 
-the Dutch language, I forked the repository. As the author had acces to the Facebook supercomputer cluster, I made the necessary 
-alterations to the paraphrase mining code to make it work on my workstation with 32GB RAM and a RTX 2070 super 8GB. The training of the
-model is done on an Azure cloud VM using the Azure Python SDK. See Azure_mussNL.ipynb.
+the Dutch language, the original repository is forked. As the author had acces to the Facebook supercomputer cluster, the necessary 
+alterations are made to the paraphrase mining code to make it work on a workstation with 32GB RAM and a RTX 2070 super 8GB. The training of the
+model can be done on an Azure cloud VM using the Azure Python SDK. See Azure_mussNL.ipynb.
+
+Also code is provided, in the 'custom' folder, to train a smaller model with the mined paraphrase data, MarianMT, which can be trained on a GPU with 8GB memory. 
+The training script utilizes the Hugging Face ecosystem instead of Fairseq as this is a more popular framework which enables easier deployment. The supplied scripts
+can be easily modified to finetune any other pre-trained model in the Hugging Face model hub to the simplification task.
 
 ## Prerequisites
 
@@ -67,18 +74,41 @@ Pretrained models should be downloaded automatically, but you can also find them
 [muss_es_mined](https://dl.fbaipublicfiles.com/muss/muss_es_mined.tar.gz)  
 
 ### Mine the data
+
+To mine paraphrases from Dutch text data, download the dutch text dataset [CC-100: Monolingual Datasets from Web Crawl Data](https://data.statmt.org/cc-100/)
+and run cc100preprocessor.py to store the data in the format expected by the paraphrase mining script.
+
+Store the created compressed datafiles at a location of choice on a disk with (for the Dutch language) at least 1TB of free space. Using a SSD is recommended as
+many read and write actions will be performed. To mine the paraphrases, run the command below.
+
 ```python
 python scripts/mine_sequences.py
 ```
 
+Several inputs will be prompted:
+The path to the compressed data files you created with cc100preprocessor.py
+How many separate compressed data files is the data split into? (Or how many of these do you want to use, if you want to do a test run)
+
+Going through all of the data will take several days (on my modest workstation). In the 'Compute embeddings' part there is a memory leak which I
+couldn't locate which made the program crash several times during running when my 32GB was filled up. As all intermediary files are saved and
+checked for existence before calculations are done, this is no big deal. The program can just be restarted and continues where it left off.
+
 ### Train the model
+
+To train a model using the Hugging Face ecosystem instead of Fairseq, which is used in the paper, run the following command to preprocess the mined dataset.
+
 ```python
-python scripts/train_model.py
+python mussNL_prepare.py
 ```
 
-### Evaluate simplifications
-Please head over to [EASSE](https://github.com/feralvam/easse/) for Sentence Simplification evaluation.
+Copy paste the data with all the necessary tokens prepended (<DEPENDENCYTREEDEPTHRATIO_...> <WORDRANKRATIO_...> <REPLACEONLYLEVENSHTEIN_...> <LENGTHRATIO_...>), 
+but not tokenized, to the folder custom/data/raw/ and run DataTransform.py in the 'custom' directory to prepare the data for training a
+Hugging Face MarianMT model.
 
+Next MarianTrainScript.py can be used to train the simplification model. This model is smaller than which is used in the paper (Bart), and thus a lesser
+performance can be expected. The scripts in the custom folder can be altered easily to finetune whichever model from the Hugging Face model hub you wish.
+
+the notebook Azure_mussNL.ipynb can be used to train a mBart model with Fairseq on Azure ML using the Azure Python SDK.
 
 ## License
 
