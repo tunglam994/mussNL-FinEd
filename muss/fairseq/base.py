@@ -14,11 +14,11 @@ import time
 
 from fairseq_cli import preprocess, train, generate
 
-from mussNLFined.muss.text import remove_multiple_whitespaces
-from mussNLFined.muss.resources.paths import get_dataset_dir, EXP_DIR, LANGUAGES, get_data_filepath, PHASES
-from mussNLFined.muss.utils.submitit import get_job_id
-from mussNLFined.muss.utils.training import clear_cuda_cache
-from mussNLFined.muss.utils.helpers import (
+from mussNLFinEd.muss.text import remove_multiple_whitespaces
+from mussNLFinEd.muss.resources.paths import get_dataset_dir, EXP_DIR, LANGUAGES, get_data_filepath, PHASES
+from mussNLFinEd.muss.utils.submitit import get_job_id
+from mussNLFinEd.muss.utils.training import clear_cuda_cache
+from mussNLFinEd.muss.utils.helpers import (
     log_std_streams,
     lock_directory,
     create_directory_or_skip,

@@ -7,11 +7,11 @@
 import shutil
 import re
 
-from mussNLFined.muss.preprocessors import get_preprocessors
-from mussNLFined.muss.utils.helpers import write_lines, read_lines, get_temp_filepath
-from mussNLFined.muss.simplifiers import get_fairseq_simplifier, get_preprocessed_simplifier
-from mussNLFined.muss.resources.paths import MODELS_DIR
-from mussNLFined.muss.utils.resources import download_and_extract
+from mussNLFinEd.muss.preprocessors import get_preprocessors
+from mussNLFinEd.muss.utils.helpers import write_lines, read_lines, get_temp_filepath
+from mussNLFinEd.muss.simplifiers import get_fairseq_simplifier, get_preprocessed_simplifier
+from mussNLFinEd.muss.resources.paths import MODELS_DIR
+from mussNLFinEd.muss.utils.resources import download_and_extract
 
 
 # Models are the best of each experiment according to validation SARI score

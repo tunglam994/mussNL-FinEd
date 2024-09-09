@@ -13,11 +13,11 @@ import gc
 import faiss
 from tqdm import tqdm
 
-from mussNLFined.muss.utils.submitit import get_executor
-from mussNLFined.muss.utils.helpers import get_file_hash, get_files_hash, log_action, yield_lines
-from mussNLFined.muss.resources.paths import get_dataset_dir
-from mussNLFined.muss.laser import get_laser_embeddings
-from mussNLFined.muss.mining.preprocessing import (
+from mussNLFinEd.muss.utils.submitit import get_executor
+from mussNLFinEd.muss.utils.helpers import get_file_hash, get_files_hash, log_action, yield_lines
+from mussNLFinEd.muss.resources.paths import get_dataset_dir
+from mussNLFinEd.muss.laser import get_laser_embeddings
+from mussNLFinEd.muss.mining.preprocessing import (
     get_subshard_paths,
     get_sentences_paths,
     sentence_tokenize_subshard,
@@ -25,7 +25,7 @@ from mussNLFined.muss.mining.preprocessing import (
     create_base_index,
     get_index_name,
 )
-from mussNLFined.muss.mining.nn_search import (
+from mussNLFinEd.muss.mining.nn_search import (
     get_cache_dir,
     get_results_path,
     compute_and_save_nn_batched,
@@ -38,7 +38,7 @@ from mussNLFined.muss.mining.nn_search import (
     combine_simplifications_in_dataset,
     get_simplification_pairs_paths,
 )
-from mussNLFined.muss.mining.filtering import SimplicityScorer
+from mussNLFinEd.muss.mining.filtering import SimplicityScorer
 
 ccnet_dir = Path(
     input(

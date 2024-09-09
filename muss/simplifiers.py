@@ -10,9 +10,9 @@ import shutil
 
 from imohash import hashfile
 
-from mussNLFined.muss.fairseq.base import fairseq_generate
-from mussNLFined.muss.preprocessors import ComposedPreprocessor
-from mussNLFined.muss.utils.helpers import count_lines, get_temp_filepath
+from mussNLFinEd.muss.fairseq.base import fairseq_generate
+from mussNLFinEd.muss.preprocessors import ComposedPreprocessor
+from mussNLFinEd.muss.utils.helpers import count_lines, get_temp_filepath
 
 
 def memoize_simplifier(simplifier):

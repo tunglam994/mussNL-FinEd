@@ -11,20 +11,20 @@ import shlex
 from pathlib import Path
 import re
 
-from mussNLFined.muss.mining.training import get_bart_kwargs, get_score_rows, get_mbart_kwargs
-from mussNLFined.muss.utils.training import clear_cuda_cache
+from mussNLFinEd.muss.mining.training import get_bart_kwargs, get_score_rows, get_mbart_kwargs
+from mussNLFinEd.muss.utils.training import clear_cuda_cache
 
-from mussNLFined.muss.fairseq.main import check_dataset, check_and_resolve_args, prepare_exp_dir
-from mussNLFined.muss.fairseq.base import fairseq_preprocess, get_fairseq_exp_dir
-# from mussNLFined.muss.fairseq.base import fairseq_train,
-from mussNLFined.muss.preprocessors import get_preprocessors
-from mussNLFined.muss.resources.datasets import create_preprocessed_dataset
-from mussNLFined.muss.resources.paths import get_data_filepath, get_dataset_dir
+from mussNLFinEd.muss.fairseq.main import check_dataset, check_and_resolve_args, prepare_exp_dir
+from mussNLFinEd.muss.fairseq.base import fairseq_preprocess, get_fairseq_exp_dir
+# from mussNLFinEd.muss.fairseq.base import fairseq_train,
+from mussNLFinEd.muss.preprocessors import get_preprocessors
+from mussNLFinEd.muss.resources.datasets import create_preprocessed_dataset
+from mussNLFinEd.muss.resources.paths import get_data_filepath, get_dataset_dir
 
-from mussNLFined.muss.utils.helpers import log_std_streams, mock_cli_args, print_running_time
+from mussNLFinEd.muss.utils.helpers import log_std_streams, mock_cli_args, print_running_time
 from fairseq_cli import preprocess, train, generate
 
-from mussNLFined.muss.utils.helpers import (
+from mussNLFinEd.muss.utils.helpers import (
     log_std_streams,
     lock_directory,
     create_directory_or_skip,
@@ -36,7 +36,7 @@ from mussNLFined.muss.utils.helpers import (
     args_dict_to_str,
 )
 
-from mussNLFined.muss.text import remove_multiple_whitespaces
+from mussNLFinEd.muss.text import remove_multiple_whitespaces
 # %%
 dataset = 'uts_nl_query-9fcb6f786a1339d290dde06e16935402_db-9fcb6f786a1339d290dde06e16935402_topk-8_nprobe-16_density-0.6_distance-0.05_filter_ne-False_levenshtein-0.2_simplicity-0.0'
 

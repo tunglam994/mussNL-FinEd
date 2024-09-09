@@ -12,16 +12,16 @@ import nevergrad as ng
 import numpy as np
 from submitit.helpers import DelayedSubmission
 
-from mussNLFined.muss.evaluation.general import evaluate_simplifier, get_easse_report, get_orig_and_refs_sents
-from mussNLFined.muss.evaluation.utils import combine_metrics
-from mussNLFined.muss.fairseq.base import fairseq_preprocess, fairseq_train, get_fairseq_exp_dir
-from mussNLFined.muss.resources.datasets import has_lines_in_common
-from mussNLFined.muss.preprocessors import get_preprocessors, get_preprocessor_by_name
-from mussNLFined.muss.resources.datasets import create_preprocessed_dataset
-from mussNLFined.muss.resources.paths import get_data_filepath, get_dataset_dir
-from mussNLFined.muss.simplifiers import get_fairseq_simplifier, get_preprocessed_simplifier
-from mussNLFined.muss.utils.submitit import get_job_id
-from mussNLFined.muss.utils.helpers import print_running_time, add_dicts
+from mussNLFinEd.muss.evaluation.general import evaluate_simplifier, get_easse_report, get_orig_and_refs_sents
+from mussNLFinEd.muss.evaluation.utils import combine_metrics
+from mussNLFinEd.muss.fairseq.base import fairseq_preprocess, fairseq_train, get_fairseq_exp_dir
+from mussNLFinEd.muss.resources.datasets import has_lines_in_common
+from mussNLFinEd.muss.preprocessors import get_preprocessors, get_preprocessor_by_name
+from mussNLFinEd.muss.resources.datasets import create_preprocessed_dataset
+from mussNLFinEd.muss.resources.paths import get_data_filepath, get_dataset_dir
+from mussNLFinEd.muss.simplifiers import get_fairseq_simplifier, get_preprocessed_simplifier
+from mussNLFinEd.muss.utils.submitit import get_job_id
+from mussNLFinEd.muss.utils.helpers import print_running_time, add_dicts
 
 
 def check_dataset(dataset):

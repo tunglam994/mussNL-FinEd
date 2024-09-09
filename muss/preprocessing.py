@@ -14,8 +14,8 @@ import numpy as np
 import torch
 from sacremoses.normalize import MosesPunctNormalizer
 
-from mussNLFined.muss.text import to_words
-from mussNLFined.muss.utils.helpers import (
+from mussNLFinEd.muss.text import to_words
+from mussNLFinEd.muss.utils.helpers import (
     open_files,
     yield_lines,
     yield_lines_in_parallel,

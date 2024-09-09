@@ -7,11 +7,11 @@
 import numpy as np
 import gc
 
-from mussNLFined.muss.resources.paths import LASER_DIR
-from mussNLFined.muss.preprocessing import get_parallel_file_preprocessor
-from mussNLFined.muss.utils.training import clear_cuda_cache
-from mussNLFined.muss.utils.helpers import write_lines, get_temp_filepath, generalized_lru_cache, read_lines, log_action, mute
-from mussNLFined.muss.resources.prepare import prepare_laser
+from mussNLFinEd.muss.resources.paths import LASER_DIR
+from mussNLFinEd.muss.preprocessing import get_parallel_file_preprocessor
+from mussNLFinEd.muss.utils.training import clear_cuda_cache
+from mussNLFinEd.muss.utils.helpers import write_lines, get_temp_filepath, generalized_lru_cache, read_lines, log_action, mute
+from mussNLFinEd.muss.resources.prepare import prepare_laser
 
 ENCODER_PATH = LASER_DIR / 'models/bilstm.93langs.2018-12-26.pt'
 BPE_CODES_PATH = LASER_DIR / 'models/93langs.fcodes'

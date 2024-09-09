@@ -8,10 +8,10 @@ from pathlib import Path
 import re
 import shutil
 
-from mussNLFined.muss.resources.paths import get_data_filepath, get_dataset_dir, TENSORBOARD_LOGS_DIR
-from mussNLFined.muss.utils.helpers import run_command, lock_directory, create_directory_or_skip
-from mussNLFined.muss.fairseq.base import get_fairseq_exp_dir
-from mussNLFined.muss.utils.submitit import make_checkpointable
+from mussNLFinEd.muss.resources.paths import get_data_filepath, get_dataset_dir, TENSORBOARD_LOGS_DIR
+from mussNLFinEd.muss.utils.helpers import run_command, lock_directory, create_directory_or_skip
+from mussNLFinEd.muss.fairseq.base import get_fairseq_exp_dir
+from mussNLFinEd.muss.utils.submitit import make_checkpointable
 
 
 def mlm_fairseq_preprocess(dataset):

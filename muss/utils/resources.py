@@ -19,7 +19,7 @@ import zipfile
 import git
 from tqdm import tqdm
 
-from mussNLFined.muss.utils.helpers import get_temp_filepath
+from mussNLFinEd.muss.utils.helpers import get_temp_filepath
 
 
 def reporthook(count, block_size, total_size):
