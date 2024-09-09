@@ -13,13 +13,13 @@ from easse.utils.constants import TEST_SETS_PATHS
 import torch
 from tqdm import tqdm
 
-from muss.resources.paths import get_data_filepath, MODELS_DIR, get_dataset_dir
-from muss.utils.helpers import add_dicts, args_str_to_dict
-from muss.utils.resources import download_and_extract
-from muss.preprocessors import GPT2BPEPreprocessor
-from muss.preprocessing import apply_line_function_to_file
-from muss.fairseq.main import get_language_from_dataset
-from muss.text import truncate
+from mussNL-Fined.muss.resources.paths import get_data_filepath, MODELS_DIR, get_dataset_dir
+from mussNL-Fined.muss.utils.helpers import add_dicts, args_str_to_dict
+from mussNL-Fined.muss.utils.resources import download_and_extract
+from mussNL-Fined.muss.preprocessors import GPT2BPEPreprocessor
+from mussNL-Fined.muss.preprocessing import apply_line_function_to_file
+from mussNL-Fined.muss.fairseq.main import get_language_from_dataset
+from mussNL-Fined.muss.text import truncate
 
 
 def prepare_bart_model(model_name):

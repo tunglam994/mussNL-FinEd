@@ -16,7 +16,7 @@ from tqdm import tqdm
 import torch
 from joblib import Parallel, delayed
 
-from muss.utils.helpers import (
+from mussNL-Fined.muss.utils.helpers import (
     get_files_hash,
     log_action,
     write_lines,
@@ -29,8 +29,8 @@ from muss.utils.helpers import (
     create_directory_or_skip,
     write_lines_in_parallel,
 )
-from muss.resources.paths import get_dataset_dir, get_data_filepath
-from muss.mining.filtering import (
+from mussNL-Fined.muss.resources.paths import get_dataset_dir, get_data_filepath
+from mussNL-Fined.muss.mining.filtering import (
     is_contained,
     is_overlapping,
     is_different_enough,

@@ -12,9 +12,9 @@ from submitit import AutoExecutor
 from submitit.helpers import DelayedSubmission
 from submitit.core.job_environment import JobEnvironment
 
-from muss.resources.paths import SUBMITIT_JOB_DIR_FORMAT, EXP_DIR
-from muss.utils.helpers import print_running_time, generalized_lru_cache
-from muss.utils.training import print_function_name, print_args, print_result
+from mussNL-Fined.muss.resources.paths import SUBMITIT_JOB_DIR_FORMAT, EXP_DIR
+from mussNL-Fined.muss.utils.helpers import print_running_time, generalized_lru_cache
+from mussNL-Fined.muss.utils.training import print_function_name, print_args, print_result
 
 
 def get_job_id():

@@ -4,10 +4,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from muss.fairseq.main import fairseq_train_and_evaluate_with_parametrization
-from muss.mining.training import get_bart_kwargs, get_score_rows, get_mbart_kwargs
-from muss.resources.prepare import prepare_wikilarge_detokenized, prepare_asset
-from muss.resources.datasets import create_smaller_dataset
+from mussNL-Fined.muss.fairseq.main import fairseq_train_and_evaluate_with_parametrization
+from mussNL-Fined.muss.mining.training import get_bart_kwargs, get_score_rows, get_mbart_kwargs
+from mussNL-Fined.muss.resources.prepare import prepare_wikilarge_detokenized, prepare_asset
+from mussNL-Fined.muss.resources.datasets import create_smaller_dataset
 
 
 # This dataset should exist in resources/datasets/ and contain the following files:

@@ -4,7 +4,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from muss.utils.helpers import harmonic_mean
+from mussNL-Fined.muss.utils.helpers import harmonic_mean
 
 
 # Tranforms take a value and cast it to a score between 0 and 1, the higher the better

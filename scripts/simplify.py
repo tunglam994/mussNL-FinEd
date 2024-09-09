@@ -6,8 +6,8 @@
 
 import argparse
 
-from muss.simplify import ALLOWED_MODEL_NAMES, simplify_sentences
-from muss.utils.helpers import read_lines
+from mussNL-Fined.muss.simplify import ALLOWED_MODEL_NAMES, simplify_sentences
+from mussNL-Fined.muss.utils.helpers import read_lines
 
 
 if __name__ == '__main__':

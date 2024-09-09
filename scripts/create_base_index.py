@@ -6,10 +6,10 @@
 
 import faiss
 
-from muss.mining.preprocessing import create_base_index, get_index_name, get_sentences_paths
-from muss.utils.helpers import yield_lines
-from muss.laser import get_laser_embeddings
-from muss.resources.paths import get_dataset_dir
+from mussNL-Fined.muss.mining.preprocessing import create_base_index, get_index_name, get_sentences_paths
+from mussNL-Fined.muss.utils.helpers import yield_lines
+from mussNL-Fined.muss.laser import get_laser_embeddings
+from mussNL-Fined.muss.resources.paths import get_dataset_dir
 
 
 # Create index

@@ -6,7 +6,7 @@
 
 from easse.cli import report, get_orig_and_refs_sents, evaluate_system_output
 
-from muss.utils.helpers import write_lines, get_temp_filepath
+from mussNL-Fined.muss.utils.helpers import write_lines, get_temp_filepath
 
 '''A simplifier is a function with signature: simplifier(complex_filepath, output_pred_filepath)'''
 

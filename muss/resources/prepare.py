@@ -9,12 +9,12 @@ import os
 import shutil
 import sys
 
-from muss.utils.helpers import run_command, create_directory_or_skip
-from muss.preprocessing import replace_lrb_rrb_file, normalize_punctuation
-from muss.utils.resources import download_and_extract, add_newline_at_end_of_file, git_clone, download
-from muss.resources.paths import get_dataset_dir, get_data_filepath, PHASES, LASER_DIR
-from muss.resources.datasets import apply_line_function_to_dataset
-from muss.text import normalize_unicode, word_detokenize
+from mussNL-Fined.muss.utils.helpers import run_command, create_directory_or_skip
+from mussNL-Fined.muss.preprocessing import replace_lrb_rrb_file, normalize_punctuation
+from mussNL-Fined.muss.utils.resources import download_and_extract, add_newline_at_end_of_file, git_clone, download
+from mussNL-Fined.muss.resources.paths import get_dataset_dir, get_data_filepath, PHASES, LASER_DIR
+from mussNL-Fined.muss.resources.datasets import apply_line_function_to_dataset
+from mussNL-Fined.muss.text import normalize_unicode, word_detokenize
 
 
 def prepare_wikilarge():
