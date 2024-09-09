@@ -31,7 +31,7 @@ from functools import wraps
 from fairseq_cli import train
 
 # =============================================================================
-# from mussNL-Fined.muss.utils.helpers import (
+# from mussNLFined.muss.utils.helpers import (
 #     log_std_streams,
 #     # lock_directory,
 #     # create_directory_or_skip,
@@ -45,10 +45,10 @@ from fairseq_cli import train
 # )
 # =============================================================================
 
-from mussNL-Fined.muss.text import remove_multiple_whitespaces
-from mussNL-Fined.muss.utils.training import clear_cuda_cache
+from mussNLFined.muss.text import remove_multiple_whitespaces
+from mussNLFined.muss.utils.training import clear_cuda_cache
 
-#from mussNL-Fined.muss.mining.training import get_mbart_kwargs
+#from mussNLFined.muss.mining.training import get_mbart_kwargs
 # %%
 
 

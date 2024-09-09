@@ -11,10 +11,10 @@ import shutil
 
 import numpy as np
 
-from mussNL-Fined.muss.preprocessing import shuffle_file_lines, get_parallel_file_pair_preprocessor, apply_line_function_to_file
-from mussNL-Fined.muss.preprocessors import dump_preprocessors, load_preprocessors
-from mussNL-Fined.muss.resources.paths import DATASETS_DIR, PHASES, LANGUAGES, get_dataset_dir, get_data_filepath, get_filepaths_dict
-from mussNL-Fined.muss.utils.helpers import count_lines, yield_lines, read_lines, create_directory_or_skip
+from mussNLFined.muss.preprocessing import shuffle_file_lines, get_parallel_file_pair_preprocessor, apply_line_function_to_file
+from mussNLFined.muss.preprocessors import dump_preprocessors, load_preprocessors
+from mussNLFined.muss.resources.paths import DATASETS_DIR, PHASES, LANGUAGES, get_dataset_dir, get_data_filepath, get_filepaths_dict
+from mussNLFined.muss.utils.helpers import count_lines, yield_lines, read_lines, create_directory_or_skip
 
 
 def yield_indexes_of_lines(filepath, lines):

@@ -13,12 +13,12 @@ from tqdm import tqdm
 import numpy as np
 import faiss
 
-from mussNL-Fined.muss.preprocessing import normalize_punctuation
-from mussNL-Fined.muss.text import yield_sentence_concatenations, normalize_unicode
-from mussNL-Fined.muss.kenlm import get_kenlm_log_prob
-from mussNL-Fined.muss.utils.helpers import batch_items, log_action, yield_lines
-from mussNL-Fined.muss.resources.paths import RESOURCES_DIR
-from mussNL-Fined.muss.mining.nn_search import cached_count_lines
+from mussNLFined.muss.preprocessing import normalize_punctuation
+from mussNLFined.muss.text import yield_sentence_concatenations, normalize_unicode
+from mussNLFined.muss.kenlm import get_kenlm_log_prob
+from mussNLFined.muss.utils.helpers import batch_items, log_action, yield_lines
+from mussNLFined.muss.resources.paths import RESOURCES_DIR
+from mussNLFined.muss.mining.nn_search import cached_count_lines
 
 from npy_append_array import NpyAppendArray
 import os

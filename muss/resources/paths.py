@@ -8,7 +8,7 @@ from itertools import product
 from pathlib import Path
 import shutil
 
-from mussNL-Fined.muss.utils.resources import download_and_extract
+from mussNLFined.muss.utils.resources import download_and_extract
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 EXP_DIR = REPO_DIR / 'experiments'

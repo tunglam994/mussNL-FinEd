@@ -11,7 +11,7 @@ import kenlm
 from tokenizers import SentencePieceBPETokenizer
 import sentencepiece as spm  # TODO: JOHAN ?
 
-from mussNL-Fined.muss.utils.helpers import get_temp_filepaths, read_lines, write_lines, log_action, run_command
+from mussNLFined.muss.utils.helpers import get_temp_filepaths, read_lines, write_lines, log_action, run_command
 
 
 def train_kenlm_language_model(input_data_paths, output_model_dir):

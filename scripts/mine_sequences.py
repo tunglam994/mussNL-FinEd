@@ -14,11 +14,11 @@ import gc
 import faiss
 from tqdm import tqdm
 
-from mussNL-Fined.muss.utils.submitit import get_executor
-from mussNL-Fined.muss.utils.helpers import get_file_hash, get_files_hash, log_action, yield_lines
-from mussNL-Fined.muss.resources.paths import get_dataset_dir
-from mussNL-Fined.muss.laser import get_laser_embeddings
-from mussNL-Fined.muss.mining.preprocessing import (
+from mussNLFined.muss.utils.submitit import get_executor
+from mussNLFined.muss.utils.helpers import get_file_hash, get_files_hash, log_action, yield_lines
+from mussNLFined.muss.resources.paths import get_dataset_dir
+from mussNLFined.muss.laser import get_laser_embeddings
+from mussNLFined.muss.mining.preprocessing import (
     get_subshard_paths,
     get_sentences_paths,
     sentence_tokenize_subshard,
@@ -26,7 +26,7 @@ from mussNL-Fined.muss.mining.preprocessing import (
     create_base_index,
     get_index_name,
 )
-from mussNL-Fined.muss.mining.nn_search import (
+from mussNLFined.muss.mining.nn_search import (
     get_cache_dir,
     get_results_path,
     compute_and_save_nn_batched,
@@ -39,9 +39,9 @@ from mussNL-Fined.muss.mining.nn_search import (
     combine_simplifications_in_dataset,
     get_simplification_pairs_paths,
 )
-from mussNL-Fined.muss.mining.filtering import SimplicityScorer
+from mussNLFined.muss.mining.filtering import SimplicityScorer
 
-from mussNL-Fined.muss.mining.nn_search import cached_count_lines, calculate_distances
+from mussNLFined.muss.mining.nn_search import cached_count_lines, calculate_distances
 
 ccnet_dir = Path(
     input(

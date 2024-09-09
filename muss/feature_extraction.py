@@ -9,9 +9,9 @@ from functools import lru_cache
 import Levenshtein
 import numpy as np
 
-from mussNL-Fined.muss.resources.paths import get_fasttext_embeddings_path
-from mussNL-Fined.muss.text import spacy_process, get_content_words
-from mussNL-Fined.muss.utils.helpers import failsafe_division, yield_lines
+from mussNLFined.muss.resources.paths import get_fasttext_embeddings_path
+from mussNLFined.muss.text import spacy_process, get_content_words
+from mussNLFined.muss.utils.helpers import failsafe_division, yield_lines
 
 
 @lru_cache(maxsize=10)
