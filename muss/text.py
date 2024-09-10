@@ -77,6 +77,7 @@ def get_sentence_tokenizer(language='en'):
         'it': 'italian',
         'de': 'german',
         'nl': 'dutch',
+        'yo': 'yoruba',
     }[language]
     return nltk.data.load(f'tokenizers/punkt/{language}.pickle')
 
