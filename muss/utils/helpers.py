@@ -141,12 +141,14 @@ def write_lines(lines, filepath=None):
 
 
 def yield_lines(filepath, gzipped=False, n_lines=None):
+    print('yield_lines is running')
     filepath = Path(filepath)
     open_function = open
     if gzipped or filepath.name.endswith('.gz'):
         open_function = gzip.open
     with open_function(filepath, 'rt', encoding='utf-8') as f:
         for i, l in enumerate(f):
+            print('Sentence', l)
             if n_lines is not None and i >= n_lines:
                 break
             yield l.rstrip('\n')
