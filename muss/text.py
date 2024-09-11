@@ -78,7 +78,18 @@ def get_sentence_tokenizer(language='en'):
         'de': 'german',
         'nl': 'dutch',
         'yo': 'yoruba',
+        'vi': 'vietnamese',
     }[language]
+    if language == 'vietnamese':
+        from pyvi import ViTokenizer
+        
+        # Define a Vietnamese sentence tokenizer using pyvi
+        def vietnamese_tokenizer(text):
+            sentences = text.split('.')
+            tokenized_sentences = [ViTokenizer.tokenize(sentence.strip()) for sentence in sentences if sentence.strip()]
+            return tokenized_sentences
+        
+        return vietnamese_tokenizer
     return nltk.data.load(f'tokenizers/punkt/{language}.pickle')
 
 
