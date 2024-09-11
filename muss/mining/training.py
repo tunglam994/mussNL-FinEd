@@ -74,6 +74,7 @@ def get_predict_files(language):
             get_data_filepath('simplext_corpus', 'test', 'complex'),
         ],
         'nl': [get_data_filepath('nl_mined', 'valid', 'complex'), get_data_filepath('nl_mined', 'test', 'complex')],
+        'vi': [get_data_filepath('vi_mined', 'valid', 'complex'), get_data_filepath('vi_mined', 'test', 'complex')],
     }[language]
 
 
@@ -110,6 +111,16 @@ def get_evaluate_kwargs(language, phase='valid'):
             'test_set': 'custom',
             'orig_sents_path': get_data_filepath('nl_mined', 'test', 'complex'),
             'refs_sents_paths': [get_data_filepath('nl_mined', 'test', 'simple')],
+        },
+        ('vi', 'valid'): {
+            'test_set': 'custom',
+            'orig_sents_path': get_data_filepath('vi_mined', 'valid', 'complex'),
+            'refs_sents_paths': [get_data_filepath('vi_mined', 'valid', 'simple')],
+        },
+        ('vi', 'test'): {
+            'test_set': 'custom',
+            'orig_sents_path': get_data_filepath('vi_mined', 'test', 'complex'),
+            'refs_sents_paths': [get_data_filepath('vi_mined', 'test', 'simple')],
         },
     }[(language, phase)]
 

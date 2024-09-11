@@ -239,6 +239,7 @@ def get_spacy_model(language='en', size='md'):
         'it': f'it_core_news_{size}',
         'de': f'de_core_news_{size}',
         'nl': f'nl_core_news_{size}',
+        'vi': f'vi_core_news_{size}',
     }[language]
     return spacy.load(model_name)  # python -m spacy download en_core_web_sm
 
