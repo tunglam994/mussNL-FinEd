@@ -120,7 +120,7 @@ def get_index_name():
     n_total_samples = int(1e9)
     n_cells = get_n_cells(n_total_samples)
     sq_size = 8
-    pca_dim = 512
+    pca_dim = 64 # 512
     embeddings_dim = 1024
     index_size = (n_total_samples * embeddings_dim * 4) / \
         (32 / sq_size) / (embeddings_dim / pca_dim)
