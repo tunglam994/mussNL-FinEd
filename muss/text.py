@@ -84,6 +84,9 @@ def get_sentence_tokenizer(language='en'):
 
 def to_sentences(text, language='en'):
     text = ' '.join(text.split('\n'))  # Remove newlines
+    if language == 'vi':
+        return get_sentence_tokenizer(language)(text)
+    
     return get_sentence_tokenizer(language).tokenize(text)
 
 
